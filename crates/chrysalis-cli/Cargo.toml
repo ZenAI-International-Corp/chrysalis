@@ -1,0 +1,22 @@
+[package]
+name = "chrysalis-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "chrysalis"
+path = "src/main.rs"
+
+[dependencies]
+chrysalis-config = { path = "../chrysalis-config" }
+chrysalis-core = { path = "../chrysalis-core" }
+chrysalis-flutter = { path = "../chrysalis-flutter" }
+chrysalis-plugins = { path = "../chrysalis-plugins" }
+
+clap.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tokio.workspace = true
+console.workspace = true
+indicatif.workspace = true
