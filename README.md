@@ -18,6 +18,30 @@ Modern, high-performance build system for Flutter Web projects written in Rust.
 
 ### Installation
 
+#### One-Line Install (Recommended)
+
+**macOS / Linux:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ZenAI-International-Corp/chrysalis/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+
+```powershell
+iwr -useb https://raw.githubusercontent.com/ZenAI-International-Corp/chrysalis/main/install.ps1 | iex
+```
+
+#### Download Pre-built Binaries
+
+Download the latest release for your platform from the [Releases](https://github.com/ZenAI-International-Corp/chrysalis/releases) page:
+
+- **Linux**: `chrysalis-linux-amd64.tar.gz` or `chrysalis-linux-arm64.tar.gz`
+- **macOS**: `chrysalis-darwin-amd64.tar.gz` or `chrysalis-darwin-arm64.tar.gz`
+- **Windows**: `chrysalis-windows-amd64.exe.zip`
+
+Extract and add to your PATH.
+
 #### From Source
 
 ```bash
@@ -119,7 +143,34 @@ chrysalis --version
 
 ## CI/CD Integration
 
+### Automated Releases
+
+Chrysalis uses GitHub Actions to automatically build and release binaries for all platforms. To create a new release:
+
+```bash
+# Create and push a version tag
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This will automatically:
+- Build binaries for Linux (amd64, arm64), macOS (amd64, arm64), and Windows (amd64)
+- Create a GitHub release with all binaries
+- Generate SHA256 checksums for verification
+
 ### GitHub Actions
+
+**Using pre-built binary (Recommended):**
+
+```yaml
+- name: Install Chrysalis
+  run: curl -fsSL https://raw.githubusercontent.com/ZenAI-International-Corp/chrysalis/main/install.sh | bash
+
+- name: Build Flutter Web
+  run: chrysalis build --verbose
+```
+
+**Building from source:**
 
 ```yaml
 - name: Setup Rust
@@ -233,6 +284,10 @@ cargo test -p chrysalis-core
 - [ ] Image optimization
 - [ ] Bundle analysis
 - [ ] Watch mode
+
+## Release Process
+
+See [RELEASE.md](./RELEASE.md) for instructions on creating a new release.
 
 ## Contributing
 
