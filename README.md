@@ -292,3 +292,7 @@ See [RELEASE.md](./RELEASE.md) for instructions on creating a new release.
 ## Contributing
 
 Contributions are welcome! Please read our contributing guidelines before submitting PRs.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
