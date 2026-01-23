@@ -76,13 +76,13 @@ impl FlutterConfig {
         }
 
         // Validate base_href format if provided
-        if let Some(ref base_href) = self.base_href {
-            if !base_href.starts_with('/') || !base_href.ends_with('/') {
-                return Err(ConfigError::InvalidValue {
-                    field: "flutter.base_href".to_string(),
-                    reason: "base_href must start and end with '/'".to_string(),
-                });
-            }
+        if let Some(ref base_href) = self.base_href
+            && (!base_href.starts_with('/') || !base_href.ends_with('/'))
+        {
+            return Err(ConfigError::InvalidValue {
+                field: "flutter.base_href".to_string(),
+                reason: "base_href must start and end with '/'".to_string(),
+            });
         }
 
         Ok(())
@@ -156,39 +156,49 @@ mod tests {
     fn test_build_args_always_disables_cdn() {
         let config = FlutterConfig::default();
         let args = config.build_args();
-        
+
         // Should always contain these
         assert!(args.contains(&"build".to_string()));
         assert!(args.contains(&"web".to_string()));
         assert!(args.contains(&"--release".to_string()));
-        
+
         // CRITICAL: Must always disable CDN for proper hash processing
         assert!(args.contains(&"--no-web-resources-cdn".to_string()));
     }
 
     #[test]
     fn test_build_args_profile_mode() {
-        let mut config = FlutterConfig::default();
-        config.release = false;
+        let config = FlutterConfig {
+            release: false,
+            ..Default::default()
+        };
         let args = config.build_args();
-        
+
         assert!(args.contains(&"--profile".to_string()));
         assert!(!args.contains(&"--release".to_string()));
-        
+
         // Still must disable CDN
         assert!(args.contains(&"--no-web-resources-cdn".to_string()));
     }
 
     #[test]
     fn test_base_href_validation() {
-        let mut config = FlutterConfig::default();
-        config.base_href = Some("/app/".to_string());
+        let config = FlutterConfig {
+            base_href: Some("/app/".to_string()),
+            ..Default::default()
+        };
         assert!(config.validate().is_ok());
 
-        config.base_href = Some("app/".to_string());
+        let config = FlutterConfig {
+            base_href: Some("app/".to_string()),
+            ..Default::default()
+        };
         assert!(config.validate().is_err());
 
-        config.base_href = Some("/app".to_string());
+        let config = FlutterConfig {
+            base_href: Some("/app".to_string()),
+            ..Default::default()
+        };
         assert!(config.validate().is_err());
     }
 }

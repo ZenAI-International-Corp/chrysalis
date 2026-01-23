@@ -1,6 +1,6 @@
 //! Init command - generate default configuration.
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use chrysalis_config::Config;
 use console::style;
 use std::path::PathBuf;
@@ -8,7 +8,10 @@ use tracing::info;
 
 pub async fn execute(config_path: PathBuf, force: bool) -> Result<()> {
     println!();
-    println!("{}", style("Initializing Chrysalis configuration...").cyan());
+    println!(
+        "{}",
+        style("Initializing Chrysalis configuration...").cyan()
+    );
     println!();
 
     // Check if config already exists
@@ -29,7 +32,10 @@ pub async fn execute(config_path: PathBuf, force: bool) -> Result<()> {
 
     println!("{}", style("✓ Configuration file created!").green());
     println!();
-    println!("Edit {} to customize your build:", style(config_path.display()).yellow());
+    println!(
+        "Edit {} to customize your build:",
+        style(config_path.display()).yellow()
+    );
     println!();
     println!("  [flutter]       - Flutter build settings");
     println!("  [build]         - Build system settings");

@@ -41,10 +41,7 @@ impl Default for BuildConfig {
             min_chunk_size_kb: 400,
             hash_length: 8,
             clean_before_build: true,
-            exclude_patterns: vec![
-                "*.map".to_string(),
-                "*.txt".to_string(),
-            ],
+            exclude_patterns: vec!["*.map".to_string(), "*.txt".to_string()],
             verbose: false,
             parallel_jobs: 0,
         }

@@ -32,11 +32,7 @@ pub struct FileInfo {
 
 impl FileInfo {
     /// Create a new FileInfo.
-    pub fn new<P: AsRef<Path>>(
-        absolute: P,
-        relative: P,
-        size: u64,
-    ) -> Self {
+    pub fn new<P: AsRef<Path>>(absolute: P, relative: P, size: u64) -> Self {
         let absolute = absolute.as_ref().to_path_buf();
         let relative = relative.as_ref().to_path_buf();
         let name = relative

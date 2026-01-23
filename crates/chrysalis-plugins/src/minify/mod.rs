@@ -1,8 +1,8 @@
 //! Minification plugin.
 
-mod js;
 mod css;
 mod html;
+mod js;
 mod json;
 
 use crate::{Plugin, Result};
@@ -10,9 +10,9 @@ use chrysalis_config::MinifyConfig;
 use chrysalis_core::BuildContext;
 use tracing::{info, warn};
 
-pub use js::minify_js;
 pub use css::minify_css;
 pub use html::minify_html;
+pub use js::minify_js;
 pub use json::minify_json;
 
 /// Minification plugin.
@@ -23,12 +23,15 @@ pub struct MinifyPlugin {
 
 impl MinifyPlugin {
     /// Create a new minify plugin.
-    /// 
+    ///
     /// # Arguments
     /// * `config` - Minification configuration
     /// * `skip_index_html` - Whether to skip index.html (true if inject plugin will handle it)
     pub fn new(config: MinifyConfig, skip_index_html: bool) -> Self {
-        Self { config, skip_index_html }
+        Self {
+            config,
+            skip_index_html,
+        }
     }
 }
 
@@ -52,13 +55,13 @@ impl Plugin for MinifyPlugin {
 
         for file_path in files {
             let file = ctx.get_file_mut(&file_path).unwrap();
-            
+
             // Skip index.html if inject plugin will handle it
             if self.skip_index_html && file.is_html() && file.name == "index.html" {
                 info!("  Skipping index.html (will be minified after injection)");
                 continue;
             }
-            
+
             // Load content
             if let Err(e) = file.load_content() {
                 warn!("Failed to load {}: {}", file.name, e);
@@ -106,14 +109,14 @@ impl Plugin for MinifyPlugin {
 
             if let Some(minified_content) = minified {
                 let new_size = minified_content.len() as u64;
-                
+
                 // Write to disk
                 chrysalis_core::write_file_content(&file_path, &minified_content)?;
-                
+
                 // Update file
                 let file = ctx.get_file_mut(&file_path).unwrap();
                 file.set_content(minified_content);
-                
+
                 // Record stats
                 ctx.stats_mut().record_minification(original_size, new_size);
                 minified_count += 1;

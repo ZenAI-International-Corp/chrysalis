@@ -1,8 +1,8 @@
 //! Clean command - remove build artifacts.
 
 use anyhow::{Context, Result};
-use chrysalis_flutter::FlutterExecutor;
 use chrysalis_config::FlutterConfig;
+use chrysalis_flutter::FlutterExecutor;
 use console::style;
 use std::path::PathBuf;
 

@@ -22,10 +22,22 @@ pub async fn execute(
     let start = Instant::now();
 
     println!();
-    println!("{}", style("╔═══════════════════════════════════════════════════╗").cyan());
-    println!("{}", style("║           CHRYSALIS 🦋                            ║").cyan());
-    println!("{}", style("║   Modern Build System for Flutter Web            ║").cyan());
-    println!("{}", style("╚═══════════════════════════════════════════════════╝").cyan());
+    println!(
+        "{}",
+        style("╔═══════════════════════════════════════════════════╗").cyan()
+    );
+    println!(
+        "{}",
+        style("║           CHRYSALIS 🦋                            ║").cyan()
+    );
+    println!(
+        "{}",
+        style("║   Modern Build System for Flutter Web            ║").cyan()
+    );
+    println!(
+        "{}",
+        style("╚═══════════════════════════════════════════════════╝").cyan()
+    );
     println!();
 
     // Determine project directory
@@ -69,8 +81,7 @@ pub async fn execute(
         info!("Cleaning build directory...");
         let build_dir = project_dir.join(&config.build.build_dir);
         if build_dir.exists() {
-            std::fs::remove_dir_all(&build_dir)
-                .context("Failed to clean build directory")?;
+            std::fs::remove_dir_all(&build_dir).context("Failed to clean build directory")?;
         }
     }
 
@@ -107,7 +118,10 @@ pub async fn execute(
     // Phase 1: Minify
     if config.plugins.minify.enabled {
         // Skip index.html during minification if inject plugin will handle it
-        plugins.push(Box::new(MinifyPlugin::new(config.plugins.minify.clone(), will_inject)));
+        plugins.push(Box::new(MinifyPlugin::new(
+            config.plugins.minify.clone(),
+            will_inject,
+        )));
     }
 
     // Phase 2: Chunk (BEFORE hashing, so Flutter can reference main.dart.js)
@@ -144,24 +158,30 @@ pub async fn execute(
     // Print summary
     println!("{}", style("Build Summary").green().bold());
     println!("{}", style("═".repeat(50)).dim());
-    
+
     let stats = ctx.stats();
     println!("  Total files:      {}", stats.total_files);
     println!("  Minified files:   {}", stats.minified_files);
     println!("  Hashed files:     {}", stats.hashed_files);
     println!("  Chunked files:    {}", stats.chunked_files);
     println!("  Total chunks:     {}", stats.total_chunks);
-    println!("  Bytes saved:      {}", chrysalis_core::format_bytes(stats.bytes_saved));
-    
+    println!(
+        "  Bytes saved:      {}",
+        chrysalis_core::format_bytes(stats.bytes_saved)
+    );
+
     if stats.original_size > 0 {
         println!("  Compression:      {:.1}%", stats.compression_ratio());
     }
-    
+
     let elapsed = start.elapsed();
     println!("  Build time:       {:.2}s", elapsed.as_secs_f64());
-    
+
     println!();
-    println!("{}", style("✓ Build completed successfully!").green().bold());
+    println!(
+        "{}",
+        style("✓ Build completed successfully!").green().bold()
+    );
     println!("  Output: {}", build_dir.display());
     println!();
 

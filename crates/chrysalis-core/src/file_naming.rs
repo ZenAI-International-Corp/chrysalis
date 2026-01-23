@@ -19,8 +19,11 @@ impl FileNaming {
     pub fn add_hash(filename: &str, hash: &str) -> String {
         let path = Path::new(filename);
         let stem = path.file_stem().unwrap_or_default().to_string_lossy();
-        let ext = path.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
-        
+        let ext = path
+            .extension()
+            .map(|e| format!(".{}", e.to_string_lossy()))
+            .unwrap_or_default();
+
         format!("{}.{}{}", stem, hash, ext)
     }
 
@@ -36,9 +39,12 @@ impl FileNaming {
     /// ```
     pub fn add_chunk_suffix(hashed_filename: &str, chunk_index: usize) -> String {
         let path = Path::new(hashed_filename);
-        let ext = path.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
+        let ext = path
+            .extension()
+            .map(|e| format!(".{}", e.to_string_lossy()))
+            .unwrap_or_default();
         let stem = path.file_stem().unwrap_or_default().to_string_lossy();
-        
+
         format!("{}.chunk{}{}", stem, chunk_index, ext)
     }
 
@@ -48,13 +54,13 @@ impl FileNaming {
     pub fn extract_hash(filename: &str) -> Option<String> {
         let path = Path::new(filename);
         let stem = path.file_stem()?.to_string_lossy();
-        
+
         // Hash is the last component before extension (8 chars)
         let parts: Vec<&str> = stem.split('.').collect();
         if parts.len() < 2 {
             return None;
         }
-        
+
         let last = parts.last()?;
         if last.len() == 8 && last.chars().all(|c| c.is_ascii_hexdigit()) {
             Some(last.to_string())
@@ -82,16 +88,19 @@ impl FileNaming {
     /// Removes both hash and chunk suffixes.
     pub fn get_original_name(filename: &str) -> String {
         let path = Path::new(filename);
-        let ext = path.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
+        let ext = path
+            .extension()
+            .map(|e| format!(".{}", e.to_string_lossy()))
+            .unwrap_or_default();
         let stem = path.file_stem().unwrap_or_default().to_string_lossy();
-        
+
         // Remove .chunkN suffix if present
         let stem = if let Some(idx) = stem.rfind(".chunk") {
             &stem[..idx]
         } else {
             &stem
         };
-        
+
         // Remove hash (8 hex chars) if present
         let parts: Vec<&str> = stem.split('.').collect();
         let stem = if parts.len() >= 2 {
@@ -104,7 +113,7 @@ impl FileNaming {
         } else {
             stem.to_string()
         };
-        
+
         format!("{}{}", stem, ext)
     }
 }
@@ -115,8 +124,14 @@ mod tests {
 
     #[test]
     fn test_add_hash() {
-        assert_eq!(FileNaming::add_hash("main.dart.js", "abc12345"), "main.dart.abc12345.js");
-        assert_eq!(FileNaming::add_hash("style.css", "def67890"), "style.def67890.css");
+        assert_eq!(
+            FileNaming::add_hash("main.dart.js", "abc12345"),
+            "main.dart.abc12345.js"
+        );
+        assert_eq!(
+            FileNaming::add_hash("style.css", "def67890"),
+            "style.def67890.css"
+        );
     }
 
     #[test]
@@ -148,7 +163,10 @@ mod tests {
 
     #[test]
     fn test_remove_hash() {
-        assert_eq!(FileNaming::remove_hash("main.dart.abc12345.js"), "main.dart.js");
+        assert_eq!(
+            FileNaming::remove_hash("main.dart.abc12345.js"),
+            "main.dart.js"
+        );
         assert_eq!(FileNaming::remove_hash("main.dart.js"), "main.dart.js");
     }
 

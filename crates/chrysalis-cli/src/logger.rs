@@ -1,7 +1,7 @@
 //! Logging configuration.
 
 use anyhow::Result;
-use tracing_subscriber::{fmt, prelude::*, EnvFilter};
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 /// Initialize logger.
 pub fn init(verbose: bool, debug: bool) -> Result<()> {

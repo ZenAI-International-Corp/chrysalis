@@ -19,7 +19,8 @@ fn test_config_serialization() {
     let toml_str = toml::to_string(&config).unwrap();
     assert!(toml_str.contains("[flutter]"));
     assert!(toml_str.contains("[build]"));
-    assert!(toml_str.contains("[plugins]"));
+    assert!(toml_str.contains("[plugins.minify]"));
+    assert!(toml_str.contains("[plugins.hash]"));
 }
 
 #[test]

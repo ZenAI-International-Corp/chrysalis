@@ -6,17 +6,17 @@
 //! - CLI overrides
 //! - Sensible defaults
 
+mod build;
 mod config;
 mod error;
 mod flutter;
-mod build;
 mod plugins;
 
+pub use build::BuildConfig;
 pub use config::{Config, ConfigBuilder};
 pub use error::{ConfigError, Result};
 pub use flutter::FlutterConfig;
-pub use build::BuildConfig;
-pub use plugins::{PluginsConfig, MinifyConfig, HashConfig, ChunkConfig, InjectConfig};
+pub use plugins::{ChunkConfig, HashConfig, InjectConfig, MinifyConfig, PluginsConfig};
 
 #[cfg(test)]
 mod tests;

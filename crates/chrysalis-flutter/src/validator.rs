@@ -38,9 +38,7 @@ impl FlutterValidator {
         }
 
         // Run `flutter --version` to verify it works
-        let output = Command::new(&self.flutter_path)
-            .arg("--version")
-            .output()?;
+        let output = Command::new(&self.flutter_path).arg("--version").output()?;
 
         if !output.status.success() {
             return Err(FlutterError::CommandFailed {
@@ -55,9 +53,7 @@ impl FlutterValidator {
 
     /// Get Flutter version.
     pub fn version(&self) -> Result<String> {
-        let output = Command::new(&self.flutter_path)
-            .arg("--version")
-            .output()?;
+        let output = Command::new(&self.flutter_path).arg("--version").output()?;
 
         if !output.status.success() {
             return Err(FlutterError::CommandFailed {
@@ -68,7 +64,7 @@ impl FlutterValidator {
         }
 
         let version_output = String::from_utf8_lossy(&output.stdout);
-        
+
         // Extract version from first line (e.g., "Flutter 3.16.0")
         let version = version_output
             .lines()

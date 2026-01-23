@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 /// Main configuration for Chrysalis.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Config {
     /// Flutter-specific configuration.
@@ -31,15 +31,12 @@ impl Config {
     /// ```
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();
-        let content = std::fs::read_to_string(path).map_err(|_| {
-            ConfigError::FileNotFound(path.to_path_buf())
-        })?;
+        let content = std::fs::read_to_string(path)
+            .map_err(|_| ConfigError::FileNotFound(path.to_path_buf()))?;
 
-        let config: Self = toml::from_str(&content).map_err(|source| {
-            ConfigError::InvalidToml {
-                file: path.to_path_buf(),
-                source,
-            }
+        let config: Self = toml::from_str(&content).map_err(|source| ConfigError::InvalidToml {
+            file: path.to_path_buf(),
+            source,
         })?;
 
         config.validate()?;
@@ -70,16 +67,6 @@ impl Config {
     /// Create a new builder.
     pub fn builder() -> ConfigBuilder {
         ConfigBuilder::default()
-    }
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            flutter: FlutterConfig::default(),
-            build: BuildConfig::default(),
-            plugins: PluginsConfig::default(),
-        }
     }
 }
 
