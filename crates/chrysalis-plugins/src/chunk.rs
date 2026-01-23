@@ -61,7 +61,7 @@ impl ChunkPlugin {
         if chrysalis_core::is_flutter_framework_file(&file.name) || file.name == "index.html" {
             return false;
         }
-        
+
         // File must be large enough
         if file.size < self.min_size as u64 {
             return false;
@@ -86,12 +86,13 @@ impl ChunkPlugin {
 
     /// Split file into chunks.
     fn split_into_chunks(&self, file: &FileInfo) -> Result<Vec<Vec<u8>>> {
-        let content = file.content.as_ref().ok_or_else(|| {
-            PluginError::ChunkingFailed {
+        let content = file
+            .content
+            .as_ref()
+            .ok_or_else(|| PluginError::ChunkingFailed {
                 file: file.absolute.clone(),
                 reason: "Content not loaded".to_string(),
-            }
-        })?;
+            })?;
 
         let mut chunks = Vec::new();
         let mut offset = 0;
@@ -107,10 +108,16 @@ impl ChunkPlugin {
 
     /// Generate a stub loader for chunked JS files.
     /// The stub will lookup chunks from the global ChunkLoader manifest at runtime.
-    fn generate_stub(&self, file_name: &str, _chunk_paths: &[PathBuf], _build_dir: &std::path::Path) -> Result<String> {
+    fn generate_stub(
+        &self,
+        file_name: &str,
+        _chunk_paths: &[PathBuf],
+        _build_dir: &std::path::Path,
+    ) -> Result<String> {
         // Generate stub that looks up chunks from manifest at runtime
         // This way, the chunk file names can be hashed after this stub is created
-        let stub = format!(r#"// Chrysalis chunked file stub
+        let stub = format!(
+            r#"// Chrysalis chunked file stub
 (async function() {{
   const fileName = '{file_name}';
   const maxRetries = 3;
@@ -159,7 +166,9 @@ impl ChunkPlugin {
   
   await loadWithRetry();
 }})();
-"#, file_name = file_name);
+"#,
+            file_name = file_name
+        );
 
         Ok(stub)
     }
@@ -235,11 +244,12 @@ impl Plugin for ChunkPlugin {
                 chrysalis_core::write_file_content(&chunk_path, chunk_content)?;
 
                 // Add to context
-                let relative = pathdiff::diff_paths(&chunk_path, &build_dir)
-                    .ok_or_else(|| PluginError::ChunkingFailed {
+                let relative = pathdiff::diff_paths(&chunk_path, &build_dir).ok_or_else(|| {
+                    PluginError::ChunkingFailed {
                         file: file_path.clone(),
                         reason: "Failed to compute relative path".to_string(),
-                    })?;
+                    }
+                })?;
 
                 let chunk_file = FileInfo::new(&chunk_path, &relative, chunk_content.len() as u64);
                 ctx.add_file(chunk_file)?;
@@ -253,7 +263,7 @@ impl Plugin for ChunkPlugin {
             if file_name.ends_with(".js") {
                 let stub_content = self.generate_stub(&file_name, &chunk_paths, &build_dir)?;
                 chrysalis_core::write_file_content(&file_path, stub_content.as_bytes())?;
-                
+
                 // Update file info in context
                 let file = ctx.get_file_mut(&file_path).unwrap();
                 file.size = stub_content.len() as u64;
@@ -268,9 +278,11 @@ impl Plugin for ChunkPlugin {
             }
         }
 
-        info!("✓ Chunked {} files into {} chunks", 
-              ctx.stats().chunked_files,
-              ctx.stats().total_chunks);
+        info!(
+            "✓ Chunked {} files into {} chunks",
+            ctx.stats().chunked_files,
+            ctx.stats().total_chunks
+        );
         Ok(())
     }
 }

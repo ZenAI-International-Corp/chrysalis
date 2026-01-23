@@ -1,7 +1,7 @@
 //! Injection plugin for chunk loader.
 
-use crate::{Plugin, PluginError, Result};
 use crate::minify::minify_html;
+use crate::{Plugin, PluginError, Result};
 use chrysalis_config::InjectConfig;
 use chrysalis_core::BuildContext;
 use std::collections::HashMap;
@@ -100,13 +100,11 @@ impl InjectPlugin {
         for (parent_path, chunk_paths) in ctx.chunks().iter() {
             if let Some(parent_file) = ctx.get_file(parent_path) {
                 let parent_name = parent_file.name.clone();
-                
+
                 // Get chunk names from the chunk paths (already in correct order)
                 let chunk_names: Vec<String> = chunk_paths
                     .iter()
-                    .filter_map(|chunk_path| {
-                        ctx.get_file(chunk_path).map(|f| f.name.clone())
-                    })
+                    .filter_map(|chunk_path| ctx.get_file(chunk_path).map(|f| f.name.clone()))
                     .collect();
 
                 if !chunk_names.is_empty() {
@@ -127,10 +125,10 @@ impl InjectPlugin {
         if parts.len() < 2 {
             return name.to_string();
         }
-        
+
         // Remove extension
         let without_ext = &parts[..parts.len() - 1];
-        
+
         // Check if second-to-last part is a hash (8 hex chars)
         if without_ext.len() >= 2 {
             let potential_hash = without_ext[without_ext.len() - 1];
@@ -139,14 +137,15 @@ impl InjectPlugin {
                 return without_ext[..without_ext.len() - 1].join(".");
             }
         }
-        
+
         without_ext.join(".")
     }
 
     /// Generate chunk loader script.
     fn generate_loader(&self, manifest: &HashMap<String, Vec<String>>) -> Result<String> {
-        let manifest_json = serde_json::to_string(manifest)
-            .map_err(|e| PluginError::InjectionFailed(format!("Failed to serialize manifest: {}", e)))?;
+        let manifest_json = serde_json::to_string(manifest).map_err(|e| {
+            PluginError::InjectionFailed(format!("Failed to serialize manifest: {}", e))
+        })?;
 
         let loader = CHUNK_LOADER_TEMPLATE.replace("{{manifest}}", &manifest_json);
         Ok(loader)
@@ -155,7 +154,7 @@ impl InjectPlugin {
     /// Update file references in HTML to use hashed versions.
     fn update_file_references(&self, html_content: &str, ctx: &BuildContext) -> String {
         let mut result = html_content.to_string();
-        
+
         // Build a map of original names to hashed names
         let mut name_map = HashMap::new();
         for file in ctx.files() {
@@ -167,7 +166,9 @@ impl InjectPlugin {
                 if parts.len() >= 3 {
                     // Check if the second-to-last part looks like a hash (8 hex chars)
                     let potential_hash = parts[parts.len() - 2];
-                    if potential_hash.len() == 8 && potential_hash.chars().all(|c| c.is_ascii_hexdigit()) {
+                    if potential_hash.len() == 8
+                        && potential_hash.chars().all(|c| c.is_ascii_hexdigit())
+                    {
                         // Reconstruct original name without hash
                         let mut original_parts = parts.clone();
                         original_parts.remove(parts.len() - 2);
@@ -177,23 +178,32 @@ impl InjectPlugin {
                 }
             }
         }
-        
+
         // Update references in HTML - handle quoted, unquoted, and compressed formats
         for (original, hashed) in name_map.iter() {
             // Pattern 1: src=filename (no quotes, compressed HTML)
             result = result.replace(&format!("src={}", original), &format!("src={}", hashed));
             // Pattern 2: src="filename"
-            result = result.replace(&format!("src=\"{}\"", original), &format!("src=\"{}\"", hashed));
+            result = result.replace(
+                &format!("src=\"{}\"", original),
+                &format!("src=\"{}\"", hashed),
+            );
             // Pattern 3: src='filename'
             result = result.replace(&format!("src='{}'", original), &format!("src='{}'", hashed));
             // Pattern 4: href=filename (no quotes, compressed HTML)
             result = result.replace(&format!("href={}", original), &format!("href={}", hashed));
             // Pattern 5: href="filename"
-            result = result.replace(&format!("href=\"{}\"", original), &format!("href=\"{}\"", hashed));
+            result = result.replace(
+                &format!("href=\"{}\"", original),
+                &format!("href=\"{}\"", hashed),
+            );
             // Pattern 6: href='filename'
-            result = result.replace(&format!("href='{}'", original), &format!("href='{}'", hashed));
+            result = result.replace(
+                &format!("href='{}'", original),
+                &format!("href='{}'", hashed),
+            );
         }
-        
+
         result
     }
 
@@ -213,7 +223,8 @@ impl InjectPlugin {
             if let Some(pos) = html_content.find("<body") {
                 if let Some(end) = html_content[pos..].find('>') {
                     let insert_pos = pos + end + 1;
-                    let mut result = String::with_capacity(html_content.len() + loader_script.len() + 20);
+                    let mut result =
+                        String::with_capacity(html_content.len() + loader_script.len() + 20);
                     result.push_str(&html_content[..insert_pos]);
                     result.push_str("<script>");
                     result.push_str(loader_script);
@@ -222,7 +233,7 @@ impl InjectPlugin {
                     return result;
                 }
             }
-            
+
             // Fallback: just prepend
             format!("<script>{}</script>{}", loader_script, html_content)
         }
@@ -237,7 +248,8 @@ impl InjectPlugin {
             .chunks()
             .keys()
             .filter_map(|parent_path| {
-                ctx.get_file(parent_path).map(|f| (f.absolute.clone(), f.name.clone()))
+                ctx.get_file(parent_path)
+                    .map(|f| (f.absolute.clone(), f.name.clone()))
             })
             .collect();
 
@@ -314,7 +326,7 @@ impl Plugin for InjectPlugin {
 
         // Generate loader script
         let loader_script = self.generate_loader(&manifest)?;
-        
+
         // Minify loader if possible
         let loader_script = if self.config.inline_manifest {
             // Already minified by template
@@ -353,7 +365,7 @@ impl Plugin for InjectPlugin {
 
             // Update file references to use hashed versions
             let updated_html = self.update_file_references(&html_content, ctx);
-            
+
             // Inject loader
             let injected_html = self.inject_into_html(&updated_html, &loader_script);
 
@@ -368,7 +380,7 @@ impl Plugin for InjectPlugin {
 
             // Write back
             chrysalis_core::write_file_content(&html_path, &new_html)?;
-            
+
             let file = ctx.get_file_mut(&html_path).unwrap();
             file.set_content(new_html);
 

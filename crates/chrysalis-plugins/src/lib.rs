@@ -9,16 +9,16 @@
 mod error;
 mod plugin;
 
-pub mod minify;
-pub mod hash;
 pub mod chunk;
+pub mod hash;
 pub mod inject;
+pub mod minify;
 
 pub use error::{PluginError, Result};
 pub use plugin::{Plugin, PluginContext};
 
+pub use chunk::ChunkPlugin;
+pub use hash::HashPlugin;
+pub use inject::InjectPlugin;
 /// Re-export all plugins.
 pub use minify::MinifyPlugin;
-pub use hash::HashPlugin;
-pub use chunk::ChunkPlugin;
-pub use inject::InjectPlugin;

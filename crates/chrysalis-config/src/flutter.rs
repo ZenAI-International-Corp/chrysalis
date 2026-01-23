@@ -156,12 +156,12 @@ mod tests {
     fn test_build_args_always_disables_cdn() {
         let config = FlutterConfig::default();
         let args = config.build_args();
-        
+
         // Should always contain these
         assert!(args.contains(&"build".to_string()));
         assert!(args.contains(&"web".to_string()));
         assert!(args.contains(&"--release".to_string()));
-        
+
         // CRITICAL: Must always disable CDN for proper hash processing
         assert!(args.contains(&"--no-web-resources-cdn".to_string()));
     }
@@ -171,10 +171,10 @@ mod tests {
         let mut config = FlutterConfig::default();
         config.release = false;
         let args = config.build_args();
-        
+
         assert!(args.contains(&"--profile".to_string()));
         assert!(!args.contains(&"--release".to_string()));
-        
+
         // Still must disable CDN
         assert!(args.contains(&"--no-web-resources-cdn".to_string()));
     }

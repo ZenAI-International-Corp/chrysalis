@@ -16,16 +16,13 @@ pub struct FlutterExecutor {
 
 impl FlutterExecutor {
     /// Create a new executor.
-    pub fn new<P: AsRef<Path>>(
-        project_dir: P,
-        config: FlutterConfig,
-    ) -> Result<Self> {
+    pub fn new<P: AsRef<Path>>(project_dir: P, config: FlutterConfig) -> Result<Self> {
         let project_dir = project_dir.as_ref().to_path_buf();
         let validator = FlutterValidator::new(config.flutter_path.clone())?;
 
         // Validate Flutter SDK
         validator.validate()?;
-        
+
         // Validate project
         validator.validate_project(&project_dir)?;
 
@@ -33,7 +30,7 @@ impl FlutterExecutor {
             "Flutter SDK found at: {}",
             validator.flutter_path().display()
         );
-        
+
         if let Ok(version) = validator.version() {
             info!("Flutter version: {}", version);
         }

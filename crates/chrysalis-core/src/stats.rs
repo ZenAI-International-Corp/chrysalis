@@ -54,7 +54,7 @@ impl BuildStats {
         if self.original_size == 0 {
             return 0.0;
         }
-        
+
         let saved = self.original_size.saturating_sub(self.final_size);
         (saved as f64 / self.original_size as f64) * 100.0
     }
@@ -85,14 +85,14 @@ mod tests {
     fn test_build_stats() {
         let mut stats = BuildStats::new();
         assert_eq!(stats.total_files, 0);
-        
+
         stats.record_minification(1000, 800);
         assert_eq!(stats.minified_files, 1);
         assert_eq!(stats.bytes_saved, 200);
-        
+
         stats.record_hash();
         assert_eq!(stats.hashed_files, 1);
-        
+
         stats.record_chunk(3);
         assert_eq!(stats.chunked_files, 1);
         assert_eq!(stats.total_chunks, 3);
@@ -103,7 +103,7 @@ mod tests {
         let mut stats = BuildStats::new();
         stats.original_size = 1000;
         stats.final_size = 700;
-        
+
         assert_eq!(stats.compression_ratio(), 30.0);
     }
 }

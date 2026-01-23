@@ -1,8 +1,8 @@
 //! Command handlers.
 
 mod build;
-mod init;
 mod clean;
+mod init;
 
 use crate::cli::{Args, Command};
 use anyhow::Result;

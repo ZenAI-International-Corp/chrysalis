@@ -46,7 +46,7 @@ impl HashPlugin {
                 return false;
             }
         }
-        
+
         // Check exclude patterns
         for pattern in &self.exclude_patterns {
             if pattern.matches_path(relative_path) {
@@ -67,45 +67,62 @@ impl HashPlugin {
     /// Replace file references in content using the file mapping.
     fn replace_references(&self, content: &str, ctx: &BuildContext) -> String {
         let mut result = content.to_string();
-        
+
         // Get file mapping (old relative path -> new relative path)
         let file_mapping = ctx.file_mapping();
-        
+
         // Sort by length (longest first) to avoid partial replacements
         let mut mappings: Vec<_> = file_mapping.iter().collect();
         mappings.sort_by(|a, b| b.0.as_os_str().len().cmp(&a.0.as_os_str().len()));
-        
+
         for (old_path, new_path) in mappings {
             let old_str = old_path.to_string_lossy();
             let new_str = new_path.to_string_lossy();
-            
+
             // Extract just the filename for both
-            let old_filename = old_path.file_name()
+            let old_filename = old_path
+                .file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_default();
-            let new_filename = new_path.file_name()
+            let new_filename = new_path
+                .file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_default();
-            
+
             if old_filename == new_filename {
                 continue;
             }
-            
+
             // Replace patterns:
             // 1. Quoted filename: "main.dart.js" -> "main.dart.abc123.js"
-            result = result.replace(&format!("\"{}\"", old_filename), &format!("\"{}\"", new_filename));
-            result = result.replace(&format!("'{}'", old_filename), &format!("'{}'", new_filename));
-            result = result.replace(&format!("`{}`", old_filename), &format!("`{}`", new_filename));
-            
+            result = result.replace(
+                &format!("\"{}\"", old_filename),
+                &format!("\"{}\"", new_filename),
+            );
+            result = result.replace(
+                &format!("'{}'", old_filename),
+                &format!("'{}'", new_filename),
+            );
+            result = result.replace(
+                &format!("`{}`", old_filename),
+                &format!("`{}`", new_filename),
+            );
+
             // 2. Quoted full path
             result = result.replace(&format!("\"{}\"", old_str), &format!("\"{}\"", new_str));
             result = result.replace(&format!("'{}'", old_str), &format!("'{}'", new_str));
-            
+
             // 3. src/href attributes: src=filename or src="filename"
-            result = result.replace(&format!("src={}", old_filename), &format!("src={}", new_filename));
-            result = result.replace(&format!("href={}", old_filename), &format!("href={}", new_filename));
+            result = result.replace(
+                &format!("src={}", old_filename),
+                &format!("src={}", new_filename),
+            );
+            result = result.replace(
+                &format!("href={}", old_filename),
+                &format!("href={}", new_filename),
+            );
         }
-        
+
         result
     }
 }
@@ -150,7 +167,7 @@ impl Plugin for HashPlugin {
                 // Generate new filename
                 let new_name = FileNaming::add_hash(&file.name, &hash);
                 let new_path = file.absolute.parent().unwrap().join(&new_name);
-                
+
                 (new_path, file.name.clone())
             };
 
@@ -193,13 +210,13 @@ impl Plugin for HashPlugin {
 
             // Replace references (now ctx is not borrowed)
             let new_content = self.replace_references(&content, ctx);
-            
+
             if new_content != content {
                 let new_bytes = new_content.into_bytes();
-                
+
                 // Write back
                 chrysalis_core::write_file_content(&file_path, &new_bytes)?;
-                
+
                 let file = ctx.get_file_mut(&file_path).unwrap();
                 file.set_content(new_bytes);
                 updated_count += 1;

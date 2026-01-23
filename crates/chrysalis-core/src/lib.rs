@@ -20,4 +20,6 @@ pub use file_info::FileInfo;
 pub use file_naming::FileNaming;
 pub use scanner::Scanner;
 pub use stats::BuildStats;
-pub use utils::{calculate_hash, format_bytes, is_flutter_framework_file, read_file_content, write_file_content};
+pub use utils::{
+    calculate_hash, format_bytes, is_flutter_framework_file, read_file_content, write_file_content,
+};

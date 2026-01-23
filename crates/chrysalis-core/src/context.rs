@@ -35,11 +35,11 @@ impl BuildContext {
     /// Create a new build context.
     pub fn new<P: AsRef<Path>>(build_dir: P, config: BuildConfig) -> Result<Self> {
         let build_dir = build_dir.as_ref().to_path_buf();
-        
+
         if !build_dir.exists() {
             return Err(BuildError::DirectoryNotFound(build_dir));
         }
-        
+
         Ok(Self {
             build_dir,
             config,
@@ -54,17 +54,16 @@ impl BuildContext {
     /// Scan the build directory and index all files.
     pub fn scan(&mut self) -> Result<()> {
         info!("Scanning build directory: {}", self.build_dir.display());
-        
-        let scanner = Scanner::new(&self.build_dir)?
-            .exclude_many(&self.config.exclude_patterns)?;
-        
+
+        let scanner = Scanner::new(&self.build_dir)?.exclude_many(&self.config.exclude_patterns)?;
+
         let files = scanner.scan()?;
         self.stats.total_files = files.len();
-        
+
         for file in files {
             self.files.insert(file.absolute.clone(), file);
         }
-        
+
         info!("Found {} files", self.stats.total_files);
         Ok(())
     }
@@ -102,7 +101,7 @@ impl BuildContext {
         if self.files.contains_key(&file.absolute) {
             return Err(BuildError::FileAlreadyExists(file.absolute.clone()));
         }
-        
+
         self.files.insert(file.absolute.clone(), file);
         Ok(())
     }
@@ -116,35 +115,41 @@ impl BuildContext {
     pub fn rename_file<P: AsRef<Path>>(&mut self, old_path: P, new_path: P) -> Result<()> {
         let old_path = old_path.as_ref();
         let new_path = new_path.as_ref();
-        
-        let mut file = self.files.remove(old_path)
+
+        let mut file = self
+            .files
+            .remove(old_path)
             .ok_or_else(|| BuildError::FileNotFound(old_path.to_path_buf()))?;
-        
+
         // Rename physical file
         std::fs::rename(&file.absolute, new_path).map_err(|source| BuildError::Io {
             path: old_path.to_path_buf(),
             source,
         })?;
-        
+
         let old_relative = file.relative.clone();
         let new_relative = pathdiff::diff_paths(new_path, &self.build_dir)
             .ok_or_else(|| BuildError::InvalidPath(new_path.to_path_buf()))?;
-        
+
         // Update file info
         file.absolute = new_path.to_path_buf();
         file.relative = new_relative.clone();
-        file.name = new_path.file_name().unwrap_or_default().to_string_lossy().to_string();
+        file.name = new_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
         file.dir = new_relative.parent().unwrap_or(Path::new("")).to_path_buf();
-        
+
         // Update mappings
         self.files.insert(new_path.to_path_buf(), file);
         self.file_mapping.insert(old_relative, new_relative);
-        
+
         // Update chunks mapping if this file is a parent of chunks
         if let Some(chunk_paths) = self.chunks.remove(old_path) {
             self.chunks.insert(new_path.to_path_buf(), chunk_paths);
         }
-        
+
         // Update chunks mapping if this file is a chunk (appears in any chunk list)
         for (_parent, chunk_paths) in self.chunks.iter_mut() {
             for chunk_path in chunk_paths.iter_mut() {
@@ -153,7 +158,7 @@ impl BuildContext {
                 }
             }
         }
-        
+
         debug!("Renamed: {} -> {}", old_path.display(), new_path.display());
         Ok(())
     }
