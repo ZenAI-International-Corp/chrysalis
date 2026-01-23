@@ -179,7 +179,7 @@ impl BuildContext {
     pub fn add_dependency<P: AsRef<Path>, Q: AsRef<Path>>(&mut self, file: P, dependency: Q) {
         self.dependencies
             .entry(file.as_ref().to_path_buf())
-            .or_insert_with(HashSet::new)
+            .or_default()
             .insert(dependency.as_ref().to_path_buf());
     }
 

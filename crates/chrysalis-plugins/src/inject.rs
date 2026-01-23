@@ -11,36 +11,36 @@ use tracing::{info, warn};
 const CHUNK_LOADER_TEMPLATE: &str = r#"
 (function() {
   'use strict';
-  
+
   // Chunk manifest
   const MANIFEST = {{manifest}};
   const BASE_URL = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
-  
+
   // Cache for loaded chunks
   const chunkCache = new Map();
   const loadingPromises = new Map();
-  
+
   /**
    * Load a single chunk using XHR (returns Uint8Array)
    */
   function loadChunk(url) {
     const fullUrl = BASE_URL + url;
-    
+
     // Check cache
     if (chunkCache.has(url)) {
       return Promise.resolve(chunkCache.get(url));
     }
-    
+
     // Check if already loading
     if (loadingPromises.has(url)) {
       return loadingPromises.get(url);
     }
-    
+
     const promise = new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open('GET', fullUrl, true);
       xhr.responseType = 'arraybuffer';
-      
+
       xhr.onload = function() {
         if (xhr.status === 200) {
           const data = new Uint8Array(xhr.response);
@@ -52,26 +52,26 @@ const CHUNK_LOADER_TEMPLATE: &str = r#"
           reject(new Error(`Failed to load chunk: ${url} (status: ${xhr.status})`));
         }
       };
-      
+
       xhr.onerror = function() {
         loadingPromises.delete(url);
         reject(new Error(`Network error loading chunk: ${url}`));
       };
-      
+
       xhr.send();
     });
-    
+
     loadingPromises.set(url, promise);
     return promise;
   }
-  
+
   // Export public API for stub files to use
   window.ChunkLoader = {
     loadChunk: loadChunk,
     manifest: MANIFEST,
     cache: chunkCache,
   };
-  
+
   // Export for debugging
   window.__CHRYSALIS__ = {
     manifest: MANIFEST,
@@ -220,18 +220,18 @@ impl InjectPlugin {
             result
         } else {
             // If no </head>, inject at beginning of <body>
-            if let Some(pos) = html_content.find("<body") {
-                if let Some(end) = html_content[pos..].find('>') {
-                    let insert_pos = pos + end + 1;
-                    let mut result =
-                        String::with_capacity(html_content.len() + loader_script.len() + 20);
-                    result.push_str(&html_content[..insert_pos]);
-                    result.push_str("<script>");
-                    result.push_str(loader_script);
-                    result.push_str("</script>");
-                    result.push_str(&html_content[insert_pos..]);
-                    return result;
-                }
+            if let Some(pos) = html_content.find("<body")
+                && let Some(end) = html_content[pos..].find('>')
+            {
+                let insert_pos = pos + end + 1;
+                let mut result =
+                    String::with_capacity(html_content.len() + loader_script.len() + 20);
+                result.push_str(&html_content[..insert_pos]);
+                result.push_str("<script>");
+                result.push_str(loader_script);
+                result.push_str("</script>");
+                result.push_str(&html_content[insert_pos..]);
+                return result;
             }
 
             // Fallback: just prepend

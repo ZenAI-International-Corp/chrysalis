@@ -4,7 +4,7 @@ use crate::Result;
 use serde::{Deserialize, Serialize};
 
 /// Plugins configuration.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct PluginsConfig {
     /// Minification plugin configuration.
@@ -77,17 +77,6 @@ pub struct InjectConfig {
 
     /// Whether to inline the chunk manifest.
     pub inline_manifest: bool,
-}
-
-impl Default for PluginsConfig {
-    fn default() -> Self {
-        Self {
-            minify: MinifyConfig::default(),
-            hash: HashConfig::default(),
-            chunk: ChunkConfig::default(),
-            inject: InjectConfig::default(),
-        }
-    }
 }
 
 impl Default for MinifyConfig {

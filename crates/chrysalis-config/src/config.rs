@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 /// Main configuration for Chrysalis.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Config {
     /// Flutter-specific configuration.
@@ -67,16 +67,6 @@ impl Config {
     /// Create a new builder.
     pub fn builder() -> ConfigBuilder {
         ConfigBuilder::default()
-    }
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            flutter: FlutterConfig::default(),
-            build: BuildConfig::default(),
-            plugins: PluginsConfig::default(),
-        }
     }
 }
 
