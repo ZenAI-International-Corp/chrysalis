@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   workflow_dispatch:
 
 env:
@@ -40,21 +40,21 @@ jobs:
           prerelease: false
           body: |
             ## Chrysalis ${{ steps.get_version.outputs.version }}
-            
+
             ### Installation
-            
+
             #### macOS/Linux (One-line install)
             ```bash
             curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | bash
             ```
-            
+
             #### Windows (PowerShell)
             ```powershell
             iwr -useb https://raw.githubusercontent.com/${{ github.repository }}/main/install.ps1 | iex
             ```
-            
+
             ### Manual Installation
-            
+
             Download the appropriate binary for your platform below and add it to your PATH.
 
   build:
@@ -88,6 +88,19 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Update version in Cargo.toml
+        shell: bash
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          echo "Updating Cargo.toml version to $VERSION"
+
+          # Update workspace.package.version in root Cargo.toml
+          sed -i.bak "s/^version = \".*\"/version = \"$VERSION\"/" Cargo.toml
+          rm -f Cargo.toml.bak
+
+          # Verify the change
+          grep "^version = " Cargo.toml
 
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
