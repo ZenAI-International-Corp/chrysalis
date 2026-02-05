@@ -58,29 +58,29 @@ jobs:
             Download the appropriate binary for your platform below and add it to your PATH.
 
   build:
-    name: Build ${{ matrix.os }}
+    name: Build ${{ matrix.target }}
     needs: create-release
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runs-on }}
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
+          - runs-on: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
             artifact_name: chrysalis
             asset_name: chrysalis-linux-amd64
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
+          - runs-on: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
             artifact_name: chrysalis
             asset_name: chrysalis-linux-arm64
-          - os: macos-latest
+          - runs-on: macos-latest
             target: x86_64-apple-darwin
             artifact_name: chrysalis
             asset_name: chrysalis-darwin-amd64
-          - os: macos-latest
+          - runs-on: macos-latest
             target: aarch64-apple-darwin
             artifact_name: chrysalis
             asset_name: chrysalis-darwin-arm64
-          - os: windows-latest
+          - runs-on: windows-latest
             target: x86_64-pc-windows-msvc
             artifact_name: chrysalis.exe
             asset_name: chrysalis-windows-amd64.exe
@@ -110,37 +110,16 @@ jobs:
           override: true
           profile: minimal
 
-      - name: Install cross-compilation tools (Linux ARM64)
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
+      - name: Install musl tools
+        if: startsWith(matrix.target, 'x86_64-unknown-linux-musl') || startsWith(matrix.target, 'aarch64-unknown-linux-musl')
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
-
-      - name: Cache cargo registry
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo build
-        uses: actions/cache@v3
-        with:
-          path: target
-          key: ${{ runner.os }}-${{ matrix.target }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          sudo apt-get install -y musl-tools
 
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target ${{ matrix.target }}
-        env:
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        shell: bash
+        run: |
+          cargo build --release --target ${{ matrix.target }}
 
       - name: Prepare artifact
         shell: bash
