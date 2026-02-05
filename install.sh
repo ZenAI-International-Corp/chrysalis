@@ -107,21 +107,18 @@ download_url="https://github.com/$REPO/releases/download/$VERSION/${asset_name}.
 
 info "Downloading Chrysalis $VERSION for $target..."
 
-curl --fail --location --progress-bar --output "$exe.tar.gz" "$download_url" ||
+curl --fail --location --progress-bar --output "/tmp/${asset_name}.tar.gz" "$download_url" ||
     error "Failed to download chrysalis from \"$download_url\""
 
-# Extract
-tar -xzf "$exe.tar.gz" -C "$bin_dir" ||
+# Extract directly to target directory
+tar -xzf "/tmp/${asset_name}.tar.gz" -C "$bin_dir" ||
     error "Failed to extract chrysalis"
-
-# Move binary to correct location
-mv "$bin_dir/$BINARY_NAME" "$exe" ||
-    error "Failed to move extracted chrysalis to destination"
 
 chmod +x "$exe" ||
     error "Failed to set permissions on chrysalis executable"
 
-rm "$exe.tar.gz"
+# Cleanup
+rm "/tmp/${asset_name}.tar.gz"
 
 tildify() {
     if [[ $1 = $HOME/* ]]; then
