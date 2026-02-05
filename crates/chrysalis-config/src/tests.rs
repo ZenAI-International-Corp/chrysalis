@@ -24,12 +24,6 @@ fn test_config_serialization() {
 #[test]
 fn test_config_from_file() {
     let config_content = r#"
-platforms:
-  web:
-    flutter:
-      release: true
-      run_pub_get: true
-
 build:
   clean_before_build: true
   verbose: true
@@ -37,6 +31,9 @@ build:
 
 platforms:
   web:
+    flutter:
+      release: true
+      run_pub_get: true
     plugins:
       minify:
         enabled: true
