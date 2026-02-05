@@ -1,7 +1,7 @@
 //! Flutter command executor.
 
 use crate::{FlutterError, FlutterValidator, Result};
-use chrysalis_config::FlutterConfig;
+use chrysalis_config::{EnvConfig, EnvLoader, FlutterConfig, Platform};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use tracing::{debug, info, warn};
@@ -11,12 +11,21 @@ use tracing::{debug, info, warn};
 pub struct FlutterExecutor {
     validator: FlutterValidator,
     project_dir: PathBuf,
+    platform: Platform,
     config: FlutterConfig,
+    env_config: EnvConfig,
+    mode: Option<String>,
 }
 
 impl FlutterExecutor {
     /// Create a new executor.
-    pub fn new<P: AsRef<Path>>(project_dir: P, config: FlutterConfig) -> Result<Self> {
+    pub fn new<P: AsRef<Path>>(
+        project_dir: P,
+        platform: Platform,
+        config: FlutterConfig,
+        env_config: EnvConfig,
+        mode: Option<String>,
+    ) -> Result<Self> {
         let project_dir = project_dir.as_ref().to_path_buf();
         let validator = FlutterValidator::new(config.flutter_path.clone())?;
 
@@ -38,7 +47,10 @@ impl FlutterExecutor {
         Ok(Self {
             validator,
             project_dir,
+            platform,
             config,
+            env_config,
+            mode,
         })
     }
 
@@ -70,11 +82,57 @@ impl FlutterExecutor {
         Ok(())
     }
 
-    /// Run `flutter build web`.
-    pub fn build_web(&self) -> Result<()> {
-        info!("Running flutter build web...");
+    /// Run `flutter build` for the configured platform.
+    pub fn build(&self) -> Result<()> {
+        info!("Running flutter build {}...", self.platform);
 
-        let args = self.config.build_args();
+        // Load environment variables
+        let mut env_loader = EnvLoader::new(&self.project_dir, self.mode.clone());
+        env_loader.load().map_err(|e| FlutterError::CommandFailed {
+            command: "load environment variables".to_string(),
+            exit_code: -1,
+            stderr: format!("Failed to load environment variables: {}", e),
+        })?;
+
+        // Get filtered environment variables
+        let env_vars =
+            env_loader.get_filtered(self.env_config.prefix(), self.env_config.whitelist());
+
+        debug!("Loaded {} environment variables", env_vars.len());
+        for (key, value) in &env_vars {
+            debug!("  {}={}", key, value);
+        }
+
+        // Build Flutter command arguments
+        let mut args = vec!["build".to_string(), self.platform.as_str().to_string()];
+
+        // Add platform-specific arguments
+        match self.platform {
+            Platform::Web => {
+                args.extend(self.build_args_web());
+            }
+            _ => {
+                // Future: add platform-specific arguments for other platforms
+                if self.config.release {
+                    args.push("--release".to_string());
+                } else {
+                    args.push("--profile".to_string());
+                }
+            }
+        }
+
+        // Add dart-define for each environment variable
+        for (key, value) in &env_vars {
+            args.push(format!("--dart-define={}={}", key, value));
+        }
+
+        // Add dart-define for MODE if mode is specified
+        if let Some(ref mode) = self.mode {
+            let mode_var = format!("{}_MODE", self.env_config.prefix().trim_end_matches('_'));
+            args.push(format!("--dart-define={}={}", mode_var, mode));
+            info!("Build mode: {}", mode);
+        }
+
         debug!("Flutter build args: {:?}", args);
 
         let mut cmd = Command::new(self.validator.flutter_path());
@@ -94,7 +152,7 @@ impl FlutterExecutor {
         }
 
         // Verify build output exists
-        let build_output = self.project_dir.join(&self.config.target_dir);
+        let build_output = self.flutter_build_dir();
         if !build_output.exists() {
             warn!(
                 "Build output directory not found: {}",
@@ -105,6 +163,11 @@ impl FlutterExecutor {
 
         info!("✓ Flutter build completed: {}", build_output.display());
         Ok(())
+    }
+
+    /// Get web-specific build arguments.
+    fn build_args_web(&self) -> Vec<String> {
+        self.config.build_args()
     }
 
     /// Run `flutter clean`.
@@ -131,8 +194,8 @@ impl FlutterExecutor {
     }
 
     /// Get the build output directory.
-    pub fn build_output_dir(&self) -> PathBuf {
-        self.project_dir.join(&self.config.target_dir)
+    pub fn flutter_build_dir(&self) -> PathBuf {
+        self.project_dir.join("build").join(self.platform.as_str())
     }
 
     /// Get the project directory.
@@ -143,5 +206,10 @@ impl FlutterExecutor {
     /// Get the Flutter configuration.
     pub fn config(&self) -> &FlutterConfig {
         &self.config
+    }
+
+    /// Get the platform.
+    pub fn platform(&self) -> Platform {
+        self.platform
     }
 }

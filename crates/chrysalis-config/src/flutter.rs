@@ -17,14 +17,13 @@ pub struct FlutterConfig {
     /// Whether to run in release mode.
     pub release: bool,
 
-    /// Target directory for Flutter output.
-    pub target_dir: PathBuf,
-
     /// Additional Flutter build arguments.
     pub extra_args: Vec<String>,
 
-    /// Web renderer type: "auto", "canvaskit", or "html".
-    pub web_renderer: WebRenderer,
+    /// Whether to build with WebAssembly support (--wasm flag).
+    /// When true, makes both skwasm and canvaskit renderers available at runtime.
+    /// When false, uses the default build mode with canvaskit renderer only.
+    pub wasm: bool,
 
     /// Base href for the Flutter web app.
     pub base_href: Option<String>,
@@ -36,27 +35,14 @@ pub struct FlutterConfig {
     pub tree_shake_icons: bool,
 }
 
-/// Web renderer type.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum WebRenderer {
-    /// Automatically choose the best renderer.
-    Auto,
-    /// Use CanvasKit renderer.
-    Canvaskit,
-    /// Use HTML renderer.
-    Html,
-}
-
 impl Default for FlutterConfig {
     fn default() -> Self {
         Self {
             flutter_path: None,
             run_pub_get: true,
             release: true,
-            target_dir: PathBuf::from("build/web"),
             extra_args: Vec::new(),
-            web_renderer: WebRenderer::Auto,
+            wasm: false,
             base_href: None,
             source_maps: false,
             tree_shake_icons: true,
@@ -67,14 +53,6 @@ impl Default for FlutterConfig {
 impl FlutterConfig {
     /// Validate Flutter configuration.
     pub fn validate(&self) -> Result<()> {
-        // Validate target directory is not empty
-        if self.target_dir.as_os_str().is_empty() {
-            return Err(ConfigError::InvalidValue {
-                field: "flutter.target_dir".to_string(),
-                reason: "target directory cannot be empty".to_string(),
-            });
-        }
-
         // Validate base_href format if provided
         if let Some(ref base_href) = self.base_href
             && (!base_href.starts_with('/') || !base_href.ends_with('/'))
@@ -93,13 +71,18 @@ impl FlutterConfig {
     /// Note: `--no-web-resources-cdn` is always enforced to ensure all resources
     /// are bundled locally for proper hash processing and offline support.
     pub fn build_args(&self) -> Vec<String> {
-        let mut args = vec!["build".to_string(), "web".to_string()];
+        let mut args = Vec::new();
 
         // Release or profile mode
         if self.release {
             args.push("--release".to_string());
         } else {
             args.push("--profile".to_string());
+        }
+
+        // WebAssembly build mode
+        if self.wasm {
+            args.push("--wasm".to_string());
         }
 
         // IMPORTANT: Always disable web resources CDN
@@ -129,17 +112,6 @@ impl FlutterConfig {
     }
 }
 
-impl WebRenderer {
-    /// Get the string representation for Flutter CLI.
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Auto => "auto",
-            Self::Canvaskit => "canvaskit",
-            Self::Html => "html",
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -149,7 +121,6 @@ mod tests {
         let config = FlutterConfig::default();
         assert!(config.run_pub_get);
         assert!(config.release);
-        assert_eq!(config.target_dir, PathBuf::from("build/web"));
     }
 
     #[test]
@@ -158,11 +129,35 @@ mod tests {
         let args = config.build_args();
 
         // Should always contain these
-        assert!(args.contains(&"build".to_string()));
-        assert!(args.contains(&"web".to_string()));
         assert!(args.contains(&"--release".to_string()));
 
         // CRITICAL: Must always disable CDN for proper hash processing
+        assert!(args.contains(&"--no-web-resources-cdn".to_string()));
+    }
+
+    #[test]
+    fn test_build_args_with_wasm() {
+        let config = FlutterConfig {
+            wasm: true,
+            ..Default::default()
+        };
+        let args = config.build_args();
+
+        assert!(args.contains(&"--wasm".to_string()));
+        assert!(args.contains(&"--release".to_string()));
+        assert!(args.contains(&"--no-web-resources-cdn".to_string()));
+    }
+
+    #[test]
+    fn test_build_args_without_wasm() {
+        let config = FlutterConfig {
+            wasm: false,
+            ..Default::default()
+        };
+        let args = config.build_args();
+
+        assert!(!args.contains(&"--wasm".to_string()));
+        assert!(args.contains(&"--release".to_string()));
         assert!(args.contains(&"--no-web-resources-cdn".to_string()));
     }
 

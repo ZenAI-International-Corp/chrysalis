@@ -1,7 +1,6 @@
 //! Build context - shared state across all plugins.
 
 use crate::{BuildError, BuildStats, FileInfo, Result, Scanner};
-use chrysalis_config::BuildConfig;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use tracing::{debug, info};
@@ -12,8 +11,8 @@ pub struct BuildContext {
     /// Build directory.
     build_dir: PathBuf,
 
-    /// Build configuration.
-    config: BuildConfig,
+    /// File patterns to exclude.
+    exclude_patterns: Vec<String>,
 
     /// All files indexed by absolute path.
     files: HashMap<PathBuf, FileInfo>,
@@ -33,7 +32,7 @@ pub struct BuildContext {
 
 impl BuildContext {
     /// Create a new build context.
-    pub fn new<P: AsRef<Path>>(build_dir: P, config: BuildConfig) -> Result<Self> {
+    pub fn new<P: AsRef<Path>>(build_dir: P, exclude_patterns: Vec<String>) -> Result<Self> {
         let build_dir = build_dir.as_ref().to_path_buf();
 
         if !build_dir.exists() {
@@ -42,7 +41,7 @@ impl BuildContext {
 
         Ok(Self {
             build_dir,
-            config,
+            exclude_patterns,
             files: HashMap::new(),
             file_mapping: HashMap::new(),
             chunks: HashMap::new(),
@@ -55,7 +54,7 @@ impl BuildContext {
     pub fn scan(&mut self) -> Result<()> {
         info!("Scanning build directory: {}", self.build_dir.display());
 
-        let scanner = Scanner::new(&self.build_dir)?.exclude_many(&self.config.exclude_patterns)?;
+        let scanner = Scanner::new(&self.build_dir)?.exclude_many(&self.exclude_patterns)?;
 
         let files = scanner.scan()?;
         self.stats.total_files = files.len();
@@ -201,11 +200,6 @@ impl BuildContext {
     /// Get build directory.
     pub fn build_dir(&self) -> &Path {
         &self.build_dir
-    }
-
-    /// Get build configuration.
-    pub fn config(&self) -> &BuildConfig {
-        &self.config
     }
 
     /// Get file mapping.

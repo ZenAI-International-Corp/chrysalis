@@ -10,7 +10,7 @@ Modern, high-performance build system for Flutter Web projects written in Rust.
 - 📦 **Single Binary**: Zero dependencies, works on any CI/CD system
 - 🔧 **Integrated**: Runs Flutter commands (`pub get`, `build web`) automatically
 - 🎯 **Optimized**: Minification, hashing, and chunking built-in
-- ⚙️ **Configurable**: TOML-based configuration with sensible defaults
+- ⚙️ **Configurable**: YAML-based configuration with sensible defaults
 - 🏗️ **Modular**: Plugin-based architecture with clean separation
 - 🔒 **Type-Safe**: Leverages Rust's type system for correctness
 
@@ -95,29 +95,9 @@ chrysalis/
 
 ## Configuration
 
-Create `chrysalis.toml` in your project root:
+Chrysalis uses a `chrysalis.yaml` configuration file in your project root.
 
-```toml
-[flutter]
-run_pub_get = true
-release = true
-target_dir = "build/web"
-
-[build]
-chunk_size_kb = 400
-hash_length = 8
-
-[plugins.minify]
-enabled = true
-minify_js = true
-minify_css = true
-
-[plugins.chunk]
-enabled = true
-include = ["*.js"]
-```
-
-See [chrysalis.toml](./chrysalis.toml) for full configuration options.
+For all available configuration options, see the generated [chrysalis.yaml](./chrysalis.yaml) file.
 
 ## CLI Usage
 
