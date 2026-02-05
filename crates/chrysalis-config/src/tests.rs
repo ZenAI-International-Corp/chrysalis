@@ -16,8 +16,8 @@ fn test_default_config() {
 fn test_config_serialization() {
     let config = Config::default();
     let yaml_str = serde_yaml::to_string(&config).unwrap();
-    assert!(yaml_str.contains("project:"));
     assert!(yaml_str.contains("build:"));
+    assert!(yaml_str.contains("platforms:"));
     assert!(yaml_str.contains("minify_js:"));
 }
 

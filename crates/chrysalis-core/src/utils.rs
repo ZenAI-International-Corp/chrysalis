@@ -77,7 +77,7 @@ pub fn copy_dir_all<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> Result<()
     })? {
         let entry = entry.map_err(|source| BuildError::Io {
             path: src.to_path_buf(),
-            source: source.into(),
+            source,
         })?;
 
         let file_type = entry.file_type().map_err(|source| BuildError::Io {

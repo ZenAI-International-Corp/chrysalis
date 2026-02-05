@@ -132,16 +132,29 @@ async fn build_web_platform(
         return Ok(());
     }
 
-    // Clean output directory if requested
+    // Clean if requested
     if clean || config.build.clean_before_build {
+        info!("Cleaning build directories...");
+
+        // 1. Clean Flutter build output (build/web)
+        let flutter_build_dir = project_dir.join(web_config.flutter_build_dir());
+        if flutter_build_dir.exists() {
+            std::fs::remove_dir_all(&flutter_build_dir)
+                .context("Failed to clean Flutter build directory")?;
+            println!("  Removed: {}", flutter_build_dir.display());
+        }
+
+        // 2. Clean Chrysalis output (dist/web)
         if let Some(output_dir) = &web_config.output_dir {
             let output_path = project_dir.join(output_dir);
             if output_path.exists() {
-                info!("Cleaning output directory...");
                 std::fs::remove_dir_all(&output_path)
                     .context("Failed to clean output directory")?;
+                println!("  Removed: {}", output_path.display());
             }
         }
+
+        println!();
     }
 
     // Phase 1: Flutter build

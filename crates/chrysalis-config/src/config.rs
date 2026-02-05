@@ -1,6 +1,6 @@
 //! Main configuration structure.
 
-use crate::{BuildConfig, ConfigError, EnvConfig, PlatformsConfig, ProjectConfig, Result};
+use crate::{BuildConfig, ConfigError, EnvConfig, PlatformsConfig, Result};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -8,9 +8,6 @@ use std::path::Path;
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Config {
-    /// Project-level configuration.
-    pub project: ProjectConfig,
-
     /// Build configuration (shared across platforms).
     pub build: BuildConfig,
 
@@ -62,7 +59,6 @@ impl Config {
 
     /// Validate the configuration.
     pub fn validate(&self) -> Result<()> {
-        self.project.validate()?;
         self.build.validate()?;
         self.env.validate()?;
         self.platforms.validate()?;
@@ -87,19 +83,12 @@ impl Config {
 /// Builder for Config.
 #[derive(Debug, Default)]
 pub struct ConfigBuilder {
-    project: Option<ProjectConfig>,
     build: Option<BuildConfig>,
     env: Option<EnvConfig>,
     platforms: Option<PlatformsConfig>,
 }
 
 impl ConfigBuilder {
-    /// Set project configuration.
-    pub fn project(mut self, project: ProjectConfig) -> Self {
-        self.project = Some(project);
-        self
-    }
-
     /// Set build configuration.
     pub fn with_build(mut self, build: BuildConfig) -> Self {
         self.build = Some(build);
@@ -121,7 +110,6 @@ impl ConfigBuilder {
     /// Build the configuration.
     pub fn build(self) -> Config {
         Config {
-            project: self.project.unwrap_or_default(),
             build: self.build.unwrap_or_default(),
             env: self.env.unwrap_or_default(),
             platforms: self.platforms.unwrap_or_default(),

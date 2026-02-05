@@ -164,13 +164,11 @@ impl PluginsConfig {
         }
 
         // Validate hash config
-        if self.hash.enabled {
-            if self.hash.hash_length == 0 || self.hash.hash_length > 32 {
-                return Err(crate::ConfigError::InvalidValue {
-                    field: "plugins.hash.hash_length".to_string(),
-                    reason: "hash length must be between 1 and 32".to_string(),
-                });
-            }
+        if self.hash.enabled && (self.hash.hash_length == 0 || self.hash.hash_length > 32) {
+            return Err(crate::ConfigError::InvalidValue {
+                field: "plugins.hash.hash_length".to_string(),
+                reason: "hash length must be between 1 and 32".to_string(),
+            });
         }
 
         Ok(())

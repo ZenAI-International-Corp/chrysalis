@@ -37,12 +37,12 @@ pub async fn execute(config_path: PathBuf, force: bool) -> Result<()> {
         style(config_path.display()).yellow()
     );
     println!();
-    println!("  [project]           - Project metadata");
-    println!("  [build]             - Build system settings");
-    println!("  [env]               - Environment variables");
-    println!("  [platforms.web]     - Web platform configuration");
-    println!("    [platforms.web.flutter]  - Flutter settings");
-    println!("    [platforms.web.plugins]  - Plugin configurations");
+    println!("  build:              - Build system settings");
+    println!("  env:                - Environment variables");
+    println!("  platforms:          - Platform configurations");
+    println!("    platforms.web:           - Web platform");
+    println!("      platforms.web.flutter: - Flutter settings");
+    println!("      platforms.web.plugins: - Plugin configurations");
     println!();
     println!("To build your project:");
     println!("  chrysalis build                    # Build web (default)");

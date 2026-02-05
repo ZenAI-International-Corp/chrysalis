@@ -1,7 +1,7 @@
 //! Configuration system for Chrysalis build tool.
 //!
 //! This crate provides configuration management with support for:
-//! - TOML configuration files
+//! - YAML configuration files
 //! - Environment variables
 //! - CLI overrides
 //! - Sensible defaults
@@ -15,7 +15,6 @@ mod flutter;
 mod platform;
 mod platforms;
 mod plugins;
-mod project;
 mod web;
 
 pub use build::BuildConfig;
@@ -27,7 +26,6 @@ pub use flutter::FlutterConfig;
 pub use platform::Platform;
 pub use platforms::PlatformsConfig;
 pub use plugins::{ChunkConfig, HashConfig, InjectConfig, MinifyConfig, PluginsConfig};
-pub use project::ProjectConfig;
 pub use web::WebConfig;
 
 #[cfg(test)]

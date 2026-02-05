@@ -1,12 +1,6 @@
 # Chrysalis Configuration
 # Modern build system for Flutter
 
-project:
-  # Project metadata (optional)
-  # name: my_app
-  # version: 1.0.0
-  # description: My Flutter application
-
 build:
   # Clean build directory before building
   clean_before_build: true
