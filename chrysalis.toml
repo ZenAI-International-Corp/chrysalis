@@ -1,7 +1,48 @@
 # Chrysalis Configuration
-# Modern build system for Flutter Web
+# Modern build system for Flutter
 
-[flutter]
+[project]
+# Project metadata (optional)
+# name = "my_app"
+# version = "1.0.0"
+# description = "My Flutter application"
+
+[build]
+# Clean build directory before building
+clean_before_build = true
+
+# Enable verbose output
+verbose = false
+
+# Number of parallel jobs (0 = number of CPUs)
+parallel_jobs = 0
+
+[env]
+# Prefix for environment variables to include in --dart-define
+# Variables starting with this prefix will be passed to Flutter build
+# e.g., PUBLIC_API_KEY, PUBLIC_BASE_URL
+prefix = "PUBLIC_"
+
+# Whitelist of environment variable names that should be included
+# even if they don't match the prefix
+# e.g., ["API_KEY", "DATABASE_URL"]
+whitelist = []
+
+# ============================================================================
+# Platform Configurations
+# ============================================================================
+
+[platforms.web]
+# Enable web platform
+enabled = true
+
+# Build directory (relative to project root)
+build_dir = "build/web"
+
+# File patterns to exclude from processing
+exclude_patterns = ["*.map", "*.txt"]
+
+[platforms.web.flutter]
 # Whether to run `flutter pub get` before build
 run_pub_get = true
 
@@ -11,8 +52,12 @@ release = true
 # Target directory for Flutter output
 target_dir = "build/web"
 
-# Web renderer: "auto", "canvaskit", or "html"
-web_renderer = "auto"
+# Build with WebAssembly support (--wasm flag)
+# When true: Makes both skwasm and canvaskit renderers available at runtime.
+#            Flutter will use skwasm if the browser supports WasmGC,
+#            otherwise falls back to canvaskit.
+# When false: Uses the default build mode with canvaskit renderer only.
+wasm = false
 
 # Base href for the app (optional)
 # base_href = "/app/"
@@ -26,32 +71,7 @@ tree_shake_icons = true
 # Additional Flutter build arguments
 extra_args = []
 
-[build]
-# Build directory (same as flutter.target_dir)
-build_dir = "build/web"
-
-# Chunk size in kilobytes
-chunk_size_kb = 400
-
-# Minimum file size for chunking in kilobytes
-min_chunk_size_kb = 400
-
-# Hash length for content-based filenames
-hash_length = 8
-
-# Clean build directory before building
-clean_before_build = true
-
-# File patterns to exclude from processing
-exclude_patterns = ["*.map", "*.txt"]
-
-# Enable verbose output
-verbose = false
-
-# Number of parallel jobs (0 = number of CPUs)
-parallel_jobs = 0
-
-[plugins.minify]
+[platforms.web.plugins.minify]
 # Enable minification
 enabled = true
 
@@ -67,9 +87,12 @@ minify_html = true
 # Minify JSON files
 minify_json = true
 
-[plugins.hash]
+[platforms.web.plugins.hash]
 # Enable content-based hashing
 enabled = true
+
+# Hash length for content-based filenames
+hash_length = 8
 
 # File patterns to include
 include = ["*.js", "*.css"]
@@ -77,19 +100,47 @@ include = ["*.js", "*.css"]
 # File patterns to exclude
 exclude = ["*.map"]
 
-[plugins.chunk]
+[platforms.web.plugins.chunk]
 # Enable file chunking
 enabled = true
+
+# Chunk size in kilobytes
+chunk_size_kb = 400
+
+# Minimum file size for chunking in kilobytes
+min_chunk_size_kb = 400
 
 # File patterns to include
 include = ["*.js"]
 
-# File patterns to exclude (service worker should not be chunked)
-exclude = ["flutter_service_worker.js"]
+# File patterns to exclude
+# Note: Flutter framework files (flutter_service_worker.js, manifest.json, etc.)
+# are automatically protected and cannot be chunked or hashed
+exclude = []
 
-[plugins.inject]
+[platforms.web.plugins.inject]
 # Enable chunk loader injection
 enabled = true
 
 # Inline manifest in chunk loader
 inline_manifest = true
+
+# ============================================================================
+# Future Platform Configurations (not yet implemented)
+# ============================================================================
+
+# [platforms.windows]
+# enabled = false
+# target_dir = "build/windows"
+# installer_type = "nsis"  # or "inno", "wix"
+
+# [platforms.macos]
+# enabled = false
+# target_dir = "build/macos"
+# bundle_id = "com.example.app"
+# create_dmg = true
+
+# [platforms.linux]
+# enabled = false
+# target_dir = "build/linux"
+# package_formats = ["appimage", "deb", "rpm"]

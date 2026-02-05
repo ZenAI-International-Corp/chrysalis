@@ -30,7 +30,7 @@ pub struct ChunkPlugin {
 
 impl ChunkPlugin {
     /// Create a new chunk plugin.
-    pub fn new(config: ChunkConfig, chunk_size: usize, min_size: usize) -> Result<Self> {
+    pub fn new(config: ChunkConfig) -> Result<Self> {
         let include_patterns = config
             .include
             .iter()
@@ -44,6 +44,9 @@ impl ChunkPlugin {
             .map(|p| Pattern::new(p))
             .collect::<std::result::Result<Vec<_>, _>>()
             .map_err(|e| anyhow::anyhow!("Invalid exclude pattern: {}", e))?;
+
+        let chunk_size = config.chunk_size_bytes();
+        let min_size = config.min_chunk_size_bytes();
 
         Ok(Self {
             config,
@@ -122,7 +125,7 @@ impl ChunkPlugin {
   const fileName = '{file_name}';
   const maxRetries = 3;
   let retryCount = 0;
-  
+
   async function loadWithRetry() {{
     try {{
       // Wait for ChunkLoader to be available
@@ -134,16 +137,16 @@ impl ChunkPlugin {
         }}
         throw new Error('ChunkLoader not available after ' + maxRetries + ' retries');
       }}
-      
+
       // Get chunks from manifest (injected at build time with actual hashed names)
       const chunks = window.ChunkLoader.manifest[fileName];
       if (!chunks || chunks.length === 0) {{
         throw new Error('No chunks found in manifest for: ' + fileName);
       }}
-      
+
       // Load all chunks in parallel using XHR
       const chunkData = await Promise.all(chunks.map(chunk => window.ChunkLoader.loadChunk(chunk)));
-      
+
       // Merge chunks
       const totalLength = chunkData.reduce((sum, data) => sum + data.length, 0);
       const merged = new Uint8Array(totalLength);
@@ -152,7 +155,7 @@ impl ChunkPlugin {
         merged.set(data, offset);
         offset += data.length;
       }}
-      
+
       // Execute the code
       const text = new TextDecoder().decode(merged);
       const script = document.createElement('script');
@@ -163,7 +166,7 @@ impl ChunkPlugin {
       throw e;
     }}
   }}
-  
+
   await loadWithRetry();
 }})();
 "#,

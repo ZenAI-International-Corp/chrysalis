@@ -37,7 +37,7 @@ pathdiff = "0.2"
 md5 = "0.7"
 sha2 = "0.10"
 
-# Minification and optimization  
+# Minification and optimization
 # Note: SWC has dramatically changed its version numbering scheme
 # Version 55+ is compatible with latest serde
 swc_core = { version = "55", features = ["common", "ecma_ast", "ecma_parser", "ecma_codegen", "ecma_minifier"] }
@@ -59,6 +59,9 @@ num_cpus = "1.16"
 
 # Async trait
 async-trait = "0.1"
+
+# Environment variable loading
+dotenvy = "0.15"
 
 [profile.release]
 opt-level = 3

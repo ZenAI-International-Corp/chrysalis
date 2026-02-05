@@ -1,23 +1,22 @@
 //! Build command implementation.
 
 use anyhow::{Context, Result};
-use chrysalis_config::Config;
+use chrysalis_config::{Config, Platform};
 use chrysalis_core::BuildContext;
 use chrysalis_flutter::FlutterExecutor;
 use chrysalis_plugins::{ChunkPlugin, HashPlugin, InjectPlugin, MinifyPlugin, Plugin};
 use console::style;
 use std::path::PathBuf;
 use std::time::Instant;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 pub async fn execute(
     config_path: PathBuf,
     project_dir: Option<PathBuf>,
-    skip_pub_get: bool,
-    skip_minify: bool,
-    skip_hash: bool,
-    skip_chunk: bool,
+    platforms: Vec<Platform>,
+    build_all: bool,
     clean: bool,
+    mode: Option<String>,
 ) -> Result<()> {
     let start = Instant::now();
 
@@ -32,7 +31,7 @@ pub async fn execute(
     );
     println!(
         "{}",
-        style("║   Modern Build System for Flutter Web            ║").cyan()
+        style("║   Modern Build System for Flutter                 ║").cyan()
     );
     println!(
         "{}",
@@ -48,7 +47,7 @@ pub async fn execute(
     info!("Project directory: {}", project_dir.display());
 
     // Load configuration
-    let mut config = if config_path.exists() {
+    let config = if config_path.exists() {
         info!("Loading config from: {}", config_path.display());
         Config::from_file(&config_path)?
     } else {
@@ -56,30 +55,87 @@ pub async fn execute(
         Config::default()
     };
 
-    // Apply CLI overrides
-    if skip_pub_get {
-        config.flutter.run_pub_get = false;
-    }
-    if skip_minify {
-        config.plugins.minify.enabled = false;
-    }
-    if skip_hash {
-        config.plugins.hash.enabled = false;
-    }
-    if skip_chunk {
-        config.plugins.chunk.enabled = false;
-    }
-    if clean {
-        config.build.clean_before_build = true;
-    }
-
     // Validate configuration
     config.validate()?;
 
+    // Determine which platforms to build
+    let platforms_to_build = if build_all {
+        // Build all enabled platforms from config
+        let enabled = config.platforms.enabled_platforms();
+        if enabled.is_empty() {
+            return Err(anyhow::anyhow!("No platforms enabled in configuration"));
+        }
+        info!("Building all enabled platforms: {}", enabled.join(", "));
+        // Convert enabled platforms to Platform enum
+        enabled
+            .iter()
+            .filter_map(|p| p.parse::<Platform>().ok())
+            .collect::<Vec<_>>()
+    } else {
+        // Use platforms from CLI argument
+        platforms
+    };
+
+    if platforms_to_build.is_empty() {
+        return Err(anyhow::anyhow!("No platforms specified for build"));
+    }
+
+    // Build each platform
+    for (idx, platform) in platforms_to_build.iter().enumerate() {
+        if idx > 0 {
+            println!();
+            println!("{}", style("─".repeat(50)).dim());
+            println!();
+        }
+
+        info!("Building platform: {}", platform);
+
+        // Currently only web platform is fully supported
+        match platform {
+            Platform::Web => {
+                build_web_platform(&config, &project_dir, clean, mode.clone()).await?;
+            }
+            _ => {
+                warn!(
+                    "Platform {} is not yet fully supported, skipping post-processing",
+                    platform
+                );
+                // For other platforms, just run flutter build
+                build_other_platform(&config, &project_dir, *platform, mode.clone()).await?;
+            }
+        }
+    }
+
+    let elapsed = start.elapsed();
+    println!();
+    println!(
+        "{}",
+        style("✓ All builds completed successfully!").green().bold()
+    );
+    println!("  Total build time: {:.2}s", elapsed.as_secs_f64());
+    println!();
+
+    Ok(())
+}
+
+/// Build web platform with full post-processing pipeline.
+async fn build_web_platform(
+    config: &Config,
+    project_dir: &PathBuf,
+    clean: bool,
+    mode: Option<String>,
+) -> Result<()> {
+    let web_config = &config.platforms.web;
+
+    if !web_config.enabled {
+        warn!("Web platform is disabled in configuration, skipping");
+        return Ok(());
+    }
+
     // Clean if requested
-    if config.build.clean_before_build {
+    if clean || config.build.clean_before_build {
         info!("Cleaning build directory...");
-        let build_dir = project_dir.join(&config.build.build_dir);
+        let build_dir = project_dir.join(&web_config.build_dir);
         if build_dir.exists() {
             std::fs::remove_dir_all(&build_dir).context("Failed to clean build directory")?;
         }
@@ -89,15 +145,21 @@ pub async fn execute(
     println!("{}", style("Phase 1: Flutter Build").yellow().bold());
     println!("{}", style("─".repeat(50)).dim());
 
-    let flutter_executor = FlutterExecutor::new(&project_dir, config.flutter.clone())?;
+    let flutter_executor = FlutterExecutor::new(
+        project_dir,
+        Platform::Web,
+        web_config.flutter.clone(),
+        config.env.clone(),
+        mode,
+    )?;
 
     // Run pub get
-    if config.flutter.run_pub_get {
+    if web_config.flutter.run_pub_get {
         flutter_executor.pub_get()?;
     }
 
-    // Run flutter build web
-    flutter_executor.build_web()?;
+    // Run flutter build
+    flutter_executor.build()?;
 
     println!();
 
@@ -106,42 +168,41 @@ pub async fn execute(
     println!("{}", style("─".repeat(50)).dim());
 
     let build_dir = flutter_executor.build_output_dir();
-    let mut ctx = BuildContext::new(&build_dir, config.build.clone())?;
+    let mut ctx = BuildContext::new(&build_dir, web_config.exclude_patterns.clone())?;
     ctx.scan()?;
 
     // Build plugin pipeline
     let mut plugins: Vec<Box<dyn Plugin>> = Vec::new();
 
     // Determine if inject plugin will run (only if both chunk and inject are enabled)
-    let will_inject = config.plugins.chunk.enabled && config.plugins.inject.enabled;
+    let will_inject = web_config.plugins.chunk.enabled && web_config.plugins.inject.enabled;
 
     // Phase 1: Minify
-    if config.plugins.minify.enabled {
+    if web_config.plugins.minify.enabled {
         // Skip index.html during minification if inject plugin will handle it
         plugins.push(Box::new(MinifyPlugin::new(
-            config.plugins.minify.clone(),
+            web_config.plugins.minify.clone(),
             will_inject,
         )));
     }
 
     // Phase 2: Chunk (BEFORE hashing, so Flutter can reference main.dart.js)
-    if config.plugins.chunk.enabled {
-        let chunk_plugin = ChunkPlugin::new(
-            config.plugins.chunk.clone(),
-            config.build.chunk_size_bytes(),
-            config.build.min_chunk_size_bytes(),
-        )?;
-        plugins.push(Box::new(chunk_plugin));
+    if web_config.plugins.chunk.enabled {
+        plugins.push(Box::new(ChunkPlugin::new(
+            web_config.plugins.chunk.clone(),
+        )?));
     }
 
     // Phase 3: Hash (AFTER chunking, so stub and chunks get hashed together)
-    if config.plugins.hash.enabled {
-        plugins.push(Box::new(HashPlugin::new(config.plugins.hash.clone())?));
+    if web_config.plugins.hash.enabled {
+        plugins.push(Box::new(HashPlugin::new(web_config.plugins.hash.clone())?));
     }
 
     // Phase 4: Inject (updates references to hashed files)
-    if config.plugins.chunk.enabled && config.plugins.inject.enabled {
-        plugins.push(Box::new(InjectPlugin::new(config.plugins.inject.clone())));
+    if web_config.plugins.chunk.enabled && web_config.plugins.inject.enabled {
+        plugins.push(Box::new(InjectPlugin::new(
+            web_config.plugins.inject.clone(),
+        )));
     }
 
     // Execute plugins
@@ -160,6 +221,7 @@ pub async fn execute(
     println!("{}", style("═".repeat(50)).dim());
 
     let stats = ctx.stats();
+    println!("  Platform:         web");
     println!("  Total files:      {}", stats.total_files);
     println!("  Minified files:   {}", stats.minified_files);
     println!("  Hashed files:     {}", stats.hashed_files);
@@ -174,15 +236,49 @@ pub async fn execute(
         println!("  Compression:      {:.1}%", stats.compression_ratio());
     }
 
-    let elapsed = start.elapsed();
-    println!("  Build time:       {:.2}s", elapsed.as_secs_f64());
+    println!("  Output:           {}", build_dir.display());
+    println!();
+
+    Ok(())
+}
+
+/// Build other platforms (no post-processing yet).
+async fn build_other_platform(
+    config: &Config,
+    project_dir: &PathBuf,
+    platform: Platform,
+    mode: Option<String>,
+) -> Result<()> {
+    info!("Building platform: {}", platform);
+
+    // For now, use default Flutter config for non-web platforms
+    let mut flutter_config = chrysalis_config::FlutterConfig::default();
+    flutter_config.target_dir = PathBuf::from(format!("build/{}", platform.as_str()));
+
+    let flutter_executor = FlutterExecutor::new(
+        project_dir,
+        platform,
+        flutter_config,
+        config.env.clone(),
+        mode,
+    )?;
+
+    // Run pub get
+    if flutter_executor.config().run_pub_get {
+        flutter_executor.pub_get()?;
+    }
+
+    // Run flutter build
+    flutter_executor.build()?;
 
     println!();
+    println!("{}", style("Build Summary").green().bold());
+    println!("{}", style("═".repeat(50)).dim());
+    println!("  Platform:         {}", platform);
     println!(
-        "{}",
-        style("✓ Build completed successfully!").green().bold()
+        "  Output:           {}",
+        flutter_executor.build_output_dir().display()
     );
-    println!("  Output: {}", build_dir.display());
     println!();
 
     Ok(())

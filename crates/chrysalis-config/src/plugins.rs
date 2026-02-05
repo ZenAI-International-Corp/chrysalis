@@ -47,6 +47,9 @@ pub struct HashConfig {
     /// Whether hashing is enabled.
     pub enabled: bool,
 
+    /// Hash length for content-based hashing.
+    pub hash_length: usize,
+
     /// Files to include in hashing (glob patterns).
     pub include: Vec<String>,
 
@@ -60,6 +63,12 @@ pub struct HashConfig {
 pub struct ChunkConfig {
     /// Whether chunking is enabled.
     pub enabled: bool,
+
+    /// Chunk size in kilobytes.
+    pub chunk_size_kb: usize,
+
+    /// Minimum file size for chunking in kilobytes.
+    pub min_chunk_size_kb: usize,
 
     /// Files to include in chunking (glob patterns).
     pub include: Vec<String>,
@@ -95,6 +104,7 @@ impl Default for HashConfig {
     fn default() -> Self {
         Self {
             enabled: true,
+            hash_length: 8,
             include: vec!["*.js".to_string(), "*.css".to_string()],
             exclude: vec!["*.map".to_string()],
         }
@@ -105,6 +115,8 @@ impl Default for ChunkConfig {
     fn default() -> Self {
         Self {
             enabled: true,
+            chunk_size_kb: 400,
+            min_chunk_size_kb: 400,
             include: vec!["*.js".to_string()],
             exclude: vec!["flutter_service_worker.js".to_string()],
         }
@@ -120,10 +132,47 @@ impl Default for InjectConfig {
     }
 }
 
+impl ChunkConfig {
+    /// Get chunk size in bytes.
+    pub fn chunk_size_bytes(&self) -> usize {
+        self.chunk_size_kb * 1024
+    }
+
+    /// Get minimum chunk size in bytes.
+    pub fn min_chunk_size_bytes(&self) -> usize {
+        self.min_chunk_size_kb * 1024
+    }
+}
+
 impl PluginsConfig {
     /// Validate plugins configuration.
     pub fn validate(&self) -> Result<()> {
-        // No specific validation needed for now
+        // Validate chunk config
+        if self.chunk.enabled {
+            if self.chunk.chunk_size_kb == 0 {
+                return Err(crate::ConfigError::InvalidValue {
+                    field: "plugins.chunk.chunk_size_kb".to_string(),
+                    reason: "chunk size must be greater than 0".to_string(),
+                });
+            }
+            if self.chunk.min_chunk_size_kb == 0 {
+                return Err(crate::ConfigError::InvalidValue {
+                    field: "plugins.chunk.min_chunk_size_kb".to_string(),
+                    reason: "min chunk size must be greater than 0".to_string(),
+                });
+            }
+        }
+
+        // Validate hash config
+        if self.hash.enabled {
+            if self.hash.hash_length == 0 || self.hash.hash_length > 32 {
+                return Err(crate::ConfigError::InvalidValue {
+                    field: "plugins.hash.hash_length".to_string(),
+                    reason: "hash length must be between 1 and 32".to_string(),
+                });
+            }
+        }
+
         Ok(())
     }
 }

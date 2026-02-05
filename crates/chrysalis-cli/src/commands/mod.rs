@@ -11,23 +11,11 @@ use anyhow::Result;
 pub async fn execute(args: Args) -> Result<()> {
     match args.command.unwrap_or_default() {
         Command::Build {
-            skip_pub_get,
-            skip_minify,
-            skip_hash,
-            skip_chunk,
+            platform,
+            all,
             clean,
-        } => {
-            build::execute(
-                args.config,
-                args.project_dir,
-                skip_pub_get,
-                skip_minify,
-                skip_hash,
-                skip_chunk,
-                clean,
-            )
-            .await
-        }
+            mode,
+        } => build::execute(args.config, args.project_dir, platform, all, clean, mode).await,
         Command::Init { force } => init::execute(args.config, force).await,
         Command::Clean => clean::execute(args.project_dir).await,
         Command::Version => {

@@ -9,6 +9,7 @@ use tracing::{info, warn};
 /// Hash plugin adds content hashes to filenames.
 pub struct HashPlugin {
     config: HashConfig,
+    hash_length: usize,
     include_patterns: Vec<Pattern>,
     exclude_patterns: Vec<Pattern>,
 }
@@ -30,8 +31,11 @@ impl HashPlugin {
             .collect::<std::result::Result<Vec<_>, _>>()
             .map_err(|e| anyhow::anyhow!("Invalid exclude pattern: {}", e))?;
 
+        let hash_length = config.hash_length;
+
         Ok(Self {
             config,
+            hash_length,
             include_patterns,
             exclude_patterns,
         })
@@ -140,7 +144,7 @@ impl Plugin for HashPlugin {
         }
 
         info!("Adding content hashes to filenames...");
-        let hash_length = ctx.config().hash_length;
+        let hash_length = self.hash_length;
 
         // Phase 1: Rename files with hash suffix
         info!("  Phase 1: Adding hash suffixes...");

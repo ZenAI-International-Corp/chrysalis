@@ -1,6 +1,6 @@
 //! Main configuration structure.
 
-use crate::{BuildConfig, ConfigError, FlutterConfig, PluginsConfig, Result};
+use crate::{BuildConfig, ConfigError, EnvConfig, PlatformsConfig, ProjectConfig, Result};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -8,14 +8,17 @@ use std::path::Path;
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Config {
-    /// Flutter-specific configuration.
-    pub flutter: FlutterConfig,
+    /// Project-level configuration.
+    pub project: ProjectConfig,
 
-    /// Build configuration.
+    /// Build configuration (shared across platforms).
     pub build: BuildConfig,
 
-    /// Plugins configuration.
-    pub plugins: PluginsConfig,
+    /// Environment variable configuration.
+    pub env: EnvConfig,
+
+    /// Multi-platform configuration.
+    pub platforms: PlatformsConfig,
 }
 
 impl Config {
@@ -58,9 +61,19 @@ impl Config {
 
     /// Validate the configuration.
     pub fn validate(&self) -> Result<()> {
-        self.flutter.validate()?;
+        self.project.validate()?;
         self.build.validate()?;
-        self.plugins.validate()?;
+        self.env.validate()?;
+        self.platforms.validate()?;
+
+        // Ensure at least one platform is enabled
+        if !self.platforms.has_enabled_platform() {
+            return Err(ConfigError::InvalidValue {
+                field: "platforms".to_string(),
+                reason: "at least one platform must be enabled".to_string(),
+            });
+        }
+
         Ok(())
     }
 
@@ -73,15 +86,16 @@ impl Config {
 /// Builder for Config.
 #[derive(Debug, Default)]
 pub struct ConfigBuilder {
-    flutter: Option<FlutterConfig>,
+    project: Option<ProjectConfig>,
     build: Option<BuildConfig>,
-    plugins: Option<PluginsConfig>,
+    env: Option<EnvConfig>,
+    platforms: Option<PlatformsConfig>,
 }
 
 impl ConfigBuilder {
-    /// Set Flutter configuration.
-    pub fn flutter(mut self, flutter: FlutterConfig) -> Self {
-        self.flutter = Some(flutter);
+    /// Set project configuration.
+    pub fn project(mut self, project: ProjectConfig) -> Self {
+        self.project = Some(project);
         self
     }
 
@@ -91,18 +105,25 @@ impl ConfigBuilder {
         self
     }
 
-    /// Set plugins configuration.
-    pub fn plugins(mut self, plugins: PluginsConfig) -> Self {
-        self.plugins = Some(plugins);
+    /// Set environment configuration.
+    pub fn env(mut self, env: EnvConfig) -> Self {
+        self.env = Some(env);
+        self
+    }
+
+    /// Set platforms configuration.
+    pub fn platforms(mut self, platforms: PlatformsConfig) -> Self {
+        self.platforms = Some(platforms);
         self
     }
 
     /// Build the configuration.
     pub fn build(self) -> Config {
         Config {
-            flutter: self.flutter.unwrap_or_default(),
+            project: self.project.unwrap_or_default(),
             build: self.build.unwrap_or_default(),
-            plugins: self.plugins.unwrap_or_default(),
+            env: self.env.unwrap_or_default(),
+            platforms: self.platforms.unwrap_or_default(),
         }
     }
 }

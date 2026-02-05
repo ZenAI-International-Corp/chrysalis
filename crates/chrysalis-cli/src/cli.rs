@@ -1,9 +1,10 @@
 //! CLI argument parsing.
 
+use chrysalis_config::Platform;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-/// Chrysalis - Modern build system for Flutter Web
+/// Chrysalis - Modern build system for Flutter
 #[derive(Parser, Debug)]
 #[command(name = "chrysalis")]
 #[command(author, version, about, long_about = None)]
@@ -31,27 +32,23 @@ pub struct Args {
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
-    /// Build the Flutter web project
+    /// Build the Flutter project
     Build {
-        /// Skip Flutter pub get
-        #[arg(long)]
-        skip_pub_get: bool,
+        /// Target platform(s): web, windows, macos, linux, android, ios
+        #[arg(short, long, value_delimiter = ',', default_value = "web")]
+        platform: Vec<Platform>,
 
-        /// Skip minification
+        /// Build all enabled platforms
         #[arg(long)]
-        skip_minify: bool,
-
-        /// Skip hashing
-        #[arg(long)]
-        skip_hash: bool,
-
-        /// Skip chunking
-        #[arg(long)]
-        skip_chunk: bool,
+        all: bool,
 
         /// Clean before build
         #[arg(long)]
         clean: bool,
+
+        /// Build mode (e.g., development, production, staging)
+        #[arg(short, long)]
+        mode: Option<String>,
     },
 
     /// Generate default configuration file
@@ -71,11 +68,10 @@ pub enum Command {
 impl Default for Command {
     fn default() -> Self {
         Self::Build {
-            skip_pub_get: false,
-            skip_minify: false,
-            skip_hash: false,
-            skip_chunk: false,
+            platform: vec![Platform::Web],
+            all: false,
             clean: false,
+            mode: None,
         }
     }
 }

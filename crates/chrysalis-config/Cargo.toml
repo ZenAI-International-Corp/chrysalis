@@ -10,6 +10,8 @@ toml.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
 num_cpus.workspace = true
+tracing.workspace = true
+dotenvy.workspace = true
 
 [dev-dependencies]
 tempfile = "3.10"

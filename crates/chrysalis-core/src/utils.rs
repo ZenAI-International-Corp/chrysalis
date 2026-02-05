@@ -51,11 +51,11 @@ pub fn format_bytes(bytes: u64) -> String {
 /// - Chunked
 /// - Modified in structure
 ///
-/// Examples: `flutter_service_worker.js`, `manifest.json`, `version.json`
+/// Examples: `flutter_service_worker.js`, `flutter_bootstrap.js`, `manifest.json`, `version.json`
 pub fn is_flutter_framework_file(name: &str) -> bool {
     matches!(
         name,
-        "flutter_service_worker.js" | "manifest.json" | "version.json"
+        "flutter_service_worker.js" | "flutter_bootstrap.js" | "manifest.json" | "version.json"
     )
 }
 
@@ -81,11 +81,11 @@ mod tests {
     #[test]
     fn test_is_flutter_framework_file() {
         assert!(is_flutter_framework_file("flutter_service_worker.js"));
+        assert!(is_flutter_framework_file("flutter_bootstrap.js"));
         assert!(is_flutter_framework_file("manifest.json"));
         assert!(is_flutter_framework_file("version.json"));
 
         assert!(!is_flutter_framework_file("main.dart.js"));
         assert!(!is_flutter_framework_file("index.html"));
-        assert!(!is_flutter_framework_file("flutter_bootstrap.js"));
     }
 }
