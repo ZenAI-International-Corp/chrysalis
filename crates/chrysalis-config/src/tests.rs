@@ -15,29 +15,32 @@ fn test_default_config() {
 #[test]
 fn test_config_serialization() {
     let config = Config::default();
-    let toml_str = toml::to_string(&config).unwrap();
-    assert!(toml_str.contains("[project]"));
-    assert!(toml_str.contains("[build]"));
-    assert!(toml_str.contains("[platforms.web.plugins.minify]"));
-    assert!(toml_str.contains("[platforms.web.plugins.hash]"));
+    let yaml_str = serde_yaml::to_string(&config).unwrap();
+    assert!(yaml_str.contains("project:"));
+    assert!(yaml_str.contains("build:"));
+    assert!(yaml_str.contains("minify_js:"));
 }
 
 #[test]
 fn test_config_from_file() {
     let config_content = r#"
-[platforms.web.flutter]
-release = true
-run_pub_get = true
-target_dir = "build/web"
+platforms:
+  web:
+    flutter:
+      release: true
+      run_pub_get: true
 
-[build]
-clean_before_build = true
-verbose = true
-parallel_jobs = 4
+build:
+  clean_before_build: true
+  verbose: true
+  parallel_jobs: 4
 
-[platforms.web.plugins.minify]
-enabled = true
-minify_js = true
+platforms:
+  web:
+    plugins:
+      minify:
+        enabled: true
+        minify_js: true
 "#;
 
     let mut temp_file = NamedTempFile::new().unwrap();

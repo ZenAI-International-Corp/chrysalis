@@ -59,6 +59,49 @@ pub fn is_flutter_framework_file(name: &str) -> bool {
     )
 }
 
+/// Copy directory recursively.
+pub fn copy_dir_all<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> Result<()> {
+    let src = src.as_ref();
+    let dst = dst.as_ref();
+
+    // Create destination directory
+    std::fs::create_dir_all(dst).map_err(|source| BuildError::Io {
+        path: dst.to_path_buf(),
+        source,
+    })?;
+
+    // Iterate over source directory
+    for entry in std::fs::read_dir(src).map_err(|source| BuildError::Io {
+        path: src.to_path_buf(),
+        source,
+    })? {
+        let entry = entry.map_err(|source| BuildError::Io {
+            path: src.to_path_buf(),
+            source: source.into(),
+        })?;
+
+        let file_type = entry.file_type().map_err(|source| BuildError::Io {
+            path: entry.path(),
+            source,
+        })?;
+
+        let dst_path = dst.join(entry.file_name());
+
+        if file_type.is_dir() {
+            // Recursively copy subdirectory
+            copy_dir_all(entry.path(), dst_path)?;
+        } else {
+            // Copy file
+            std::fs::copy(entry.path(), &dst_path).map_err(|source| BuildError::Io {
+                path: entry.path(),
+                source,
+            })?;
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

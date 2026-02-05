@@ -152,7 +152,7 @@ impl FlutterExecutor {
         }
 
         // Verify build output exists
-        let build_output = self.project_dir.join(&self.config.target_dir);
+        let build_output = self.flutter_build_dir();
         if !build_output.exists() {
             warn!(
                 "Build output directory not found: {}",
@@ -194,8 +194,8 @@ impl FlutterExecutor {
     }
 
     /// Get the build output directory.
-    pub fn build_output_dir(&self) -> PathBuf {
-        self.project_dir.join(&self.config.target_dir)
+    pub fn flutter_build_dir(&self) -> PathBuf {
+        self.project_dir.join("build").join(self.platform.as_str())
     }
 
     /// Get the project directory.

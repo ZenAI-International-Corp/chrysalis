@@ -132,12 +132,15 @@ async fn build_web_platform(
         return Ok(());
     }
 
-    // Clean if requested
+    // Clean output directory if requested
     if clean || config.build.clean_before_build {
-        info!("Cleaning build directory...");
-        let build_dir = project_dir.join(&web_config.build_dir);
-        if build_dir.exists() {
-            std::fs::remove_dir_all(&build_dir).context("Failed to clean build directory")?;
+        if let Some(output_dir) = &web_config.output_dir {
+            let output_path = project_dir.join(output_dir);
+            if output_path.exists() {
+                info!("Cleaning output directory...");
+                std::fs::remove_dir_all(&output_path)
+                    .context("Failed to clean output directory")?;
+            }
         }
     }
 
@@ -163,12 +166,42 @@ async fn build_web_platform(
 
     println!();
 
-    // Phase 2: Post-processing
-    println!("{}", style("Phase 2: Post-Processing").yellow().bold());
+    // Phase 2: Copy build artifacts to output directory
+    let flutter_build_dir = project_dir.join(web_config.flutter_build_dir());
+    let processing_dir = if let Some(output_dir) = &web_config.output_dir {
+        let output_path = project_dir.join(output_dir);
+
+        println!("{}", style("Phase 2: Copy Build Artifacts").yellow().bold());
+        println!("{}", style("─".repeat(50)).dim());
+
+        info!(
+            "Copying {} -> {}",
+            flutter_build_dir.display(),
+            output_path.display()
+        );
+
+        // Copy Flutter build output to output directory
+        chrysalis_core::copy_dir_all(&flutter_build_dir, &output_path)
+            .context("Failed to copy build artifacts")?;
+
+        info!("✓ Build artifacts copied to {}", output_path.display());
+        println!();
+
+        output_path
+    } else {
+        // Process in-place
+        info!(
+            "Processing files in-place at {}",
+            flutter_build_dir.display()
+        );
+        flutter_build_dir
+    };
+
+    // Phase 3: Post-processing
+    println!("{}", style("Phase 3: Post-Processing").yellow().bold());
     println!("{}", style("─".repeat(50)).dim());
 
-    let build_dir = flutter_executor.build_output_dir();
-    let mut ctx = BuildContext::new(&build_dir, web_config.exclude_patterns.clone())?;
+    let mut ctx = BuildContext::new(&processing_dir, web_config.exclude_patterns.clone())?;
     ctx.scan()?;
 
     // Build plugin pipeline
@@ -236,7 +269,7 @@ async fn build_web_platform(
         println!("  Compression:      {:.1}%", stats.compression_ratio());
     }
 
-    println!("  Output:           {}", build_dir.display());
+    println!("  Output:           {}", processing_dir.display());
     println!();
 
     Ok(())
@@ -252,8 +285,7 @@ async fn build_other_platform(
     info!("Building platform: {}", platform);
 
     // For now, use default Flutter config for non-web platforms
-    let mut flutter_config = chrysalis_config::FlutterConfig::default();
-    flutter_config.target_dir = PathBuf::from(format!("build/{}", platform.as_str()));
+    let flutter_config = chrysalis_config::FlutterConfig::default();
 
     let flutter_executor = FlutterExecutor::new(
         project_dir,
@@ -277,7 +309,7 @@ async fn build_other_platform(
     println!("  Platform:         {}", platform);
     println!(
         "  Output:           {}",
-        flutter_executor.build_output_dir().display()
+        flutter_executor.flutter_build_dir().display()
     );
     println!();
 

@@ -10,11 +10,11 @@ pub enum ConfigError {
     #[error("Configuration file not found: {0}")]
     FileNotFound(PathBuf),
 
-    /// Invalid TOML syntax.
-    #[error("Invalid TOML syntax in {file}: {source}")]
-    InvalidToml {
+    /// Invalid YAML syntax.
+    #[error("Invalid YAML syntax in {file}: {source}")]
+    InvalidYaml {
         file: PathBuf,
-        source: toml::de::Error,
+        source: serde_yaml::Error,
     },
 
     /// Invalid JSON syntax.

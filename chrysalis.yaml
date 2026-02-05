@@ -1,0 +1,158 @@
+# Chrysalis Configuration
+# Modern build system for Flutter
+
+project:
+  # Project metadata (optional)
+  # name: my_app
+  # version: 1.0.0
+  # description: My Flutter application
+
+build:
+  # Clean build directory before building
+  clean_before_build: true
+
+  # Enable verbose output
+  verbose: false
+
+  # Number of parallel jobs (0 = number of CPUs)
+  parallel_jobs: 0
+
+env:
+  # Prefix for environment variables to include in --dart-define
+  # Variables starting with this prefix will be passed to Flutter build
+  # e.g., PUBLIC_API_KEY, PUBLIC_BASE_URL
+  prefix: "PUBLIC_"
+
+  # Whitelist of environment variable names that should be included
+  # even if they don't match the prefix
+  # e.g., ["API_KEY", "DATABASE_URL"]
+  whitelist: []
+
+# ============================================================================
+# Platform Configurations
+# ============================================================================
+
+platforms:
+  web:
+    # Enable web platform
+    enabled: true
+
+    # Output directory for processed files (relative to project root)
+    # Set to "dist/web" by default. Set to null to process files in-place.
+    # Note: Flutter always outputs to build/web first, then Chrysalis processes
+    # the files and copies them to this output directory.
+    output_dir: dist/web
+
+    # File patterns to exclude from processing
+    exclude_patterns:
+      - "*.map"
+      - "*.txt"
+
+    flutter:
+      # Whether to run `flutter pub get` before build
+      run_pub_get: true
+
+      # Build in release mode (false = profile mode)
+      release: true
+
+      # Build with WebAssembly support (--wasm flag)
+      # When true: Makes both skwasm and canvaskit renderers available at runtime.
+      #            Flutter will use skwasm if the browser supports WasmGC,
+      #            otherwise falls back to canvaskit.
+      # When false: Uses the default build mode with canvaskit renderer only.
+      wasm: false
+
+      # Base href for the app (optional)
+      # base_href: /app/
+
+      # Enable source maps for debugging
+      source_maps: false
+
+      # Enable tree shaking of icons
+      tree_shake_icons: true
+
+      # Additional Flutter build arguments
+      extra_args: []
+
+    plugins:
+      minify:
+        # Enable minification
+        enabled: true
+
+        # Minify JavaScript files
+        minify_js: true
+
+        # Minify CSS files
+        minify_css: true
+
+        # Minify HTML files
+        minify_html: true
+
+        # Minify JSON files
+        minify_json: true
+
+      hash:
+        # Enable content-based hashing
+        enabled: true
+
+        # Hash length for content-based filenames
+        hash_length: 8
+
+        # File patterns to include
+        include:
+          - "*.js"
+          - "*.css"
+
+        # File patterns to exclude
+        exclude:
+          - "*.map"
+
+      chunk:
+        # Enable file chunking
+        enabled: true
+
+        # Chunk size in kilobytes
+        chunk_size_kb: 400
+
+        # Minimum file size for chunking in kilobytes
+        min_chunk_size_kb: 400
+
+        # File patterns to include
+        include:
+          - "*.js"
+
+        # File patterns to exclude
+        # Note: Flutter framework files (flutter_service_worker.js, manifest.json, etc.)
+        # are automatically protected and cannot be chunked or hashed
+        exclude: []
+
+      inject:
+        # Enable chunk loader injection
+        enabled: true
+
+        # Inline manifest in chunk loader
+        inline_manifest: true
+
+# ============================================================================
+# Future Platform Configurations (not yet implemented)
+# ============================================================================
+
+# platforms:
+#   windows:
+#     enabled: false
+#     output_dir: dist/windows
+#     installer_type: nsis  # or "inno", "wix"
+#
+#   macos:
+#     enabled: false
+#     output_dir: dist/macos
+#     bundle_id: com.example.app
+#     create_dmg: true
+#
+#   linux:
+#     enabled: false
+#     output_dir: dist/linux
+#     package_formats:
+#       - appimage
+#       - deb
+#       - rpm

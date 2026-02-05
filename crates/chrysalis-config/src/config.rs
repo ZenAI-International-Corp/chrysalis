@@ -29,7 +29,7 @@ impl Config {
     /// ```no_run
     /// use chrysalis_config::Config;
     ///
-    /// let config = Config::from_file("chrysalis.toml")?;
+    /// let config = Config::from_file("chrysalis.yaml")?;
     /// # Ok::<(), chrysalis_config::ConfigError>(())
     /// ```
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
@@ -37,10 +37,11 @@ impl Config {
         let content = std::fs::read_to_string(path)
             .map_err(|_| ConfigError::FileNotFound(path.to_path_buf()))?;
 
-        let config: Self = toml::from_str(&content).map_err(|source| ConfigError::InvalidToml {
-            file: path.to_path_buf(),
-            source,
-        })?;
+        let config: Self =
+            serde_yaml::from_str(&content).map_err(|source| ConfigError::InvalidYaml {
+                file: path.to_path_buf(),
+                source,
+            })?;
 
         config.validate()?;
         Ok(config)
@@ -53,7 +54,7 @@ impl Config {
 
     /// Save configuration to a file.
     pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<()> {
-        let content = toml::to_string_pretty(self)
+        let content = serde_yaml::to_string(self)
             .map_err(|e| anyhow::anyhow!("Failed to serialize config: {}", e))?;
         std::fs::write(path, content)?;
         Ok(())

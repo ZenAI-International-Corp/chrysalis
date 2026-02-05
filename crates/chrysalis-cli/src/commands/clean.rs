@@ -16,7 +16,7 @@ pub async fn execute(project_dir: Option<PathBuf>) -> Result<()> {
         .context("Failed to determine project directory")?;
 
     // Load config to get build directories
-    let config_path = project_dir.join("chrysalis.toml");
+    let config_path = project_dir.join("chrysalis.yaml");
     let config = if config_path.exists() {
         Config::from_file(&config_path)?
     } else {
@@ -37,11 +37,13 @@ pub async fn execute(project_dir: Option<PathBuf>) -> Result<()> {
     // Run flutter clean
     executor.clean()?;
 
-    // Also remove build directory
-    let build_dir = project_dir.join(&config.platforms.web.build_dir);
-    if build_dir.exists() {
-        std::fs::remove_dir_all(&build_dir).context("Failed to remove build directory")?;
-        println!("  Removed: {}", build_dir.display());
+    // Also remove output directory (if configured)
+    if let Some(output_dir) = &config.platforms.web.output_dir {
+        let output_path = project_dir.join(output_dir);
+        if output_path.exists() {
+            std::fs::remove_dir_all(&output_path).context("Failed to remove output directory")?;
+            println!("  Removed: {}", output_path.display());
+        }
     }
 
     println!("{}", style("✓ Clean completed successfully!").green());

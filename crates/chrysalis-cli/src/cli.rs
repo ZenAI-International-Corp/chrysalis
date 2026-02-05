@@ -10,7 +10,7 @@ use std::path::PathBuf;
 #[command(author, version, about, long_about = None)]
 pub struct Args {
     /// Path to configuration file
-    #[arg(short, long, default_value = "chrysalis.toml")]
+    #[arg(short, long, default_value = "chrysalis.yaml")]
     pub config: PathBuf,
 
     /// Project directory (defaults to current directory)

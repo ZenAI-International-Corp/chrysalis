@@ -95,29 +95,33 @@ chrysalis/
 
 ## Configuration
 
-Create `chrysalis.toml` in your project root:
+Chrysalis uses a `chrysalis.toml` configuration file in your project root.
 
 ```toml
-[flutter]
+[platforms.web]
+enabled = true
+output_dir = "dist/web"
+
+[platforms.web.flutter]
 run_pub_get = true
 release = true
-target_dir = "build/web"
 
-[build]
-chunk_size_kb = 400
-hash_length = 8
-
-[plugins.minify]
+[platforms.web.plugins.minify]
 enabled = true
 minify_js = true
 minify_css = true
 
-[plugins.chunk]
+[platforms.web.plugins.chunk]
 enabled = true
+chunk_size_kb = 400
 include = ["*.js"]
+
+[platforms.web.plugins.hash]
+enabled = true
+hash_length = 8
 ```
 
-See [chrysalis.toml](./chrysalis.toml) for full configuration options.
+For all available configuration options, see the generated [chrysalis.toml](./chrysalis.toml) file.
 
 ## CLI Usage
 

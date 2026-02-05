@@ -17,9 +17,6 @@ pub struct FlutterConfig {
     /// Whether to run in release mode.
     pub release: bool,
 
-    /// Target directory for Flutter output.
-    pub target_dir: PathBuf,
-
     /// Additional Flutter build arguments.
     pub extra_args: Vec<String>,
 
@@ -44,7 +41,6 @@ impl Default for FlutterConfig {
             flutter_path: None,
             run_pub_get: true,
             release: true,
-            target_dir: PathBuf::from("build/web"),
             extra_args: Vec::new(),
             wasm: false,
             base_href: None,
@@ -57,14 +53,6 @@ impl Default for FlutterConfig {
 impl FlutterConfig {
     /// Validate Flutter configuration.
     pub fn validate(&self) -> Result<()> {
-        // Validate target directory is not empty
-        if self.target_dir.as_os_str().is_empty() {
-            return Err(ConfigError::InvalidValue {
-                field: "flutter.target_dir".to_string(),
-                reason: "target directory cannot be empty".to_string(),
-            });
-        }
-
         // Validate base_href format if provided
         if let Some(ref base_href) = self.base_href
             && (!base_href.starts_with('/') || !base_href.ends_with('/'))
@@ -133,7 +121,6 @@ mod tests {
         let config = FlutterConfig::default();
         assert!(config.run_pub_get);
         assert!(config.release);
-        assert_eq!(config.target_dir, PathBuf::from("build/web"));
     }
 
     #[test]
